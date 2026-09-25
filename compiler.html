@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MindAR Targets Compiler — Academic Poster AR</title>
+  <!-- Load MindAR Image Core Library for compilation -->
+  <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/dist/mindar-image.prod.js"></script>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --accent: #38bdf8;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+    .container {
+      max-width: 900px;
+      width: 100%;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+    header p {
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-title {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--accent);
+    }
+    .badge {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .preview-box {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #020617;
+      border: 2px dashed #475569;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .preview-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .preview-box canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .file-input {
+      display: none;
+    }
+    .upload-hint {
+      position: absolute;
+      bottom: 8px;
+      background: rgba(15, 23, 42, 0.85);
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      color: var(--text-muted);
+      backdrop-filter: blur(4px);
+    }
+    .action-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.9rem 2rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn:hover:not(:disabled) {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .progress-bar-container {
+      width: 100%;
+      height: 10px;
+      background: #334155;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-top: 1.5rem;
+      display: none;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #38bdf8, #10b981);
+      transition: width 0.2s ease;
+    }
+    .status-text {
+      margin-top: 0.75rem;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+    .instructions-card {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    .instructions-card h2 {
+      font-size: 1.15rem;
+      margin-bottom: 0.75rem;
+      color: #e2e8f0;
+    }
+    .instructions-card ol {
+      padding-left: 1.25rem;
+      line-height: 1.7;
+      color: var(--text-muted);
+    }
+    .instructions-card code {
+      background: #0f172a;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      color: #38bdf8;
+      font-size: 0.88rem;
+    }
+    .nav-links {
+      margin-top: 1.5rem;
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+    }
+    .nav-links a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+    .nav-links a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>MindAR Image Targets Compiler</h1>
+      <p>Compile your 2 poster graphs into a tracking binary (<code>targets.mind</code>) using in-browser WebGL</p>
+    </header>
+
+    <div class="cards-grid">
+      <!-- Target 0 Card -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Target 0: Graph 1</span>
+          <span class="badge">targetIndex: 0</span>
+        </div>
+        <div class="preview-box" id="box0" onclick="document.getElementById('file0').click()">
+          <img id="img0" src="assets/graph1.png" alt="Graph 1 Target">
+          <canvas id="canvas0"></canvas>
+          <div class="upload-hint">Click to replace image</div>
+        </div>
+        <input type="file" id="file0" class="file-input" accept="image/*">
+        <p style="font-size:0.85rem; color:var(--text-muted);">Triggers <code>video1.mp4</code> upon camera recognition.</p>
+      </div>
+
+      <!-- Target 1 Card -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Target 1: Graph 2</span>
+          <span class="badge">targetIndex: 1</span>
+        </div>
+        <div class="preview-box" id="box1" onclick="document.getElementById('file1').click()">
+          <img id="img1" src="assets/graph2.png" alt="Graph 2 Target">
+          <canvas id="canvas1"></canvas>
+          <div class="upload-hint">Click to replace image</div>
+        </div>
+        <input type="file" id="file1" class="file-input" accept="image/*">
+        <p style="font-size:0.85rem; color:var(--text-muted);">Triggers <code>video2.mp4</code> upon camera recognition.</p>
+      </div>
+    </div>
+
+    <!-- Compile Action Panel -->
+    <div class="action-panel">
+      <button class="btn" id="compileBtn" onclick="startCompilation()">
+        <span>⚡ Compile & Export targets.mind</span>
+      </button>
+
+      <div class="progress-bar-container" id="progressContainer">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="status-text" id="statusText">Ready. Click above to compile targets with in-browser WebGL.</div>
+    </div>
+
+    <!-- Step-by-Step Instructions -->
+    <div class="instructions-card">
+      <h2>How it works:</h2>
+      <ol>
+        <li>Both graph images above are loaded automatically from <code>assets/graph1.png</code> and <code>assets/graph2.png</code>.</li>
+        <li>Click <strong>Compile & Export targets.mind</strong>. MindAR will extract visual keypoints using your browser's GPU.</li>
+        <li>Once finished (usually 5–15 seconds), your browser will automatically download <code>targets.mind</code>.</li>
+        <li>Move or save <code>targets.mind</code> into the <code>assets/</code> folder inside your project.</li>
+        <li>You can also click on either preview above to upload your own custom graph images anytime!</li>
+      </ol>
+    </div>
+
+    <div class="nav-links">
+      <a href="index.html">📱 Open WebAR Camera App</a>
+      <a href="poster.html">📊 Open Poster Mockup & QR Code</a>
+    </div>
+  </div>
+
+  <script>
+    // Handle image file selection
+    function handleFile(input, imgElement) {
+      input.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            imgElement.src = event.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
+    handleFile(document.getElementById('file0'), document.getElementById('img0'));
+    handleFile(document.getElementById('file1'), document.getElementById('img1'));
+
+    async function startCompilation() {
+      const compileBtn = document.getElementById('compileBtn');
+      const progressContainer = document.getElementById('progressContainer');
+      const progressBar = document.getElementById('progressBar');
+      const statusText = document.getElementById('statusText');
+
+      const img0 = document.getElementById('img0');
+      const img1 = document.getElementById('img1');
+
+      if (!img0.complete || !img1.complete) {
+        alert("Images are still loading. Please wait a moment.");
+        return;
+      }
+
+      compileBtn.disabled = true;
+      progressContainer.style.display = 'block';
+      progressBar.style.width = '5%';
+      statusText.innerText = "Initializing MindAR WebGL compiler...";
+
+      try {
+        if (!window.MINDAR || !window.MINDAR.IMAGE || !window.MINDAR.IMAGE.Compiler) {
+          throw new Error("MindAR compiler library not loaded. Check internet connection.");
+        }
+
+        const compiler = new window.MINDAR.IMAGE.Compiler();
+
+        statusText.innerText = "Extracting feature points (Target 0: Graph 1 & Target 1: Graph 2)...";
+
+        // Compile targets with progress callback
+        await compiler.compileImageTargets([img0, img1], (progress) => {
+          const pct = Math.round(progress);
+          progressBar.style.width = `${pct}%`;
+          statusText.innerText = `Extracting features: ${pct}% complete...`;
+        });
+
+        statusText.innerText = "Generating binary targets.mind buffer...";
+        progressBar.style.width = '95%';
+
+        const exportedBuffer = await compiler.exportData();
+        progressBar.style.width = '100%';
+
+        // Trigger automatic file download
+        const blob = new Blob([exportedBuffer], { type: 'application/octet-stream' });
+        const downloadUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = 'targets.mind';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(downloadUrl);
+
+        statusText.innerHTML = "✅ <strong>Compilation successful!</strong> <code>targets.mind</code> downloaded.<br>Please move <code>targets.mind</code> into the <code>assets/</code> folder.";
+        statusText.style.color = "#10b981";
+      } catch (err) {
+        console.error(err);
+        statusText.innerHTML = `❌ <strong>Error:</strong> ${err.message}`;
+        statusText.style.color = "#ef4444";
+      } finally {
+        compileBtn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

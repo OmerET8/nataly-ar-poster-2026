@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academic Conference Poster — With Interactive WebAR</title>
+  <!-- QRCode.js library for live QR generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --secondary: #0284c7;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --accent: #2563eb;
+      --border: #cbd5e1;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: #0f172a;
+      color: var(--text);
+      padding: 2rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Floating Tool Bar (Hidden on print) */
+    .toolbar {
+      max-width: 1100px;
+      width: 100%;
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      color: #f8fafc;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    }
+    .url-input-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex: 1;
+      min-width: 320px;
+    }
+    .url-input-group label {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #94a3b8;
+      white-space: nowrap;
+    }
+    .url-input {
+      flex: 1;
+      background: #0f172a;
+      border: 1px solid #475569;
+      color: #f8fafc;
+      padding: 0.6rem 0.9rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+    .url-input:focus {
+      outline: none;
+      border-color: #38bdf8;
+    }
+    .toolbar-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+    .btn {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 0.6rem 1.1rem;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.88rem;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: background 0.2s;
+    }
+    .btn:hover {
+      background: #1d4ed8;
+    }
+    .btn-secondary {
+      background: #334155;
+      color: #e2e8f0;
+    }
+    .btn-secondary:hover {
+      background: #475569;
+    }
+
+    /* Academic Poster Canvas */
+    .poster-container {
+      width: 100%;
+      max-width: 1100px;
+      background: var(--card-bg);
+      border-radius: 8px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    /* Poster Header */
+    .poster-header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #0369a1 100%);
+      color: white;
+      padding: 2.5rem 3rem;
+      text-align: center;
+      border-bottom: 4px solid #38bdf8;
+    }
+    .conference-tag {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 0.3rem 0.9rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 0.8rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .poster-title {
+      font-size: 2.2rem;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.02em;
+    }
+    .poster-authors {
+      font-size: 1.1rem;
+      color: #e0f2fe;
+      margin-bottom: 0.35rem;
+    }
+    .poster-affiliation {
+      font-size: 0.95rem;
+      color: #bae6fd;
+    }
+
+    /* Poster Grid */
+    .poster-body {
+      padding: 2.5rem 3rem;
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 2rem;
+    }
+
+    /* Content Cards */
+    .section-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 1.4rem;
+    }
+    .col-full { grid-column: span 12; }
+    .col-half { grid-column: span 6; }
+    .col-8 { grid-column: span 8; }
+    .col-4 { grid-column: span 4; }
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--primary);
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 0.4rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-text {
+      font-size: 0.92rem;
+      line-height: 1.6;
+      color: #334155;
+      margin-bottom: 0.8rem;
+    }
+
+    /* Graph Figures (AR Targets) */
+    .graph-figure-card {
+      background: #ffffff;
+      border: 2px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .graph-figure-card:hover {
+      box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1);
+    }
+    .ar-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: #1e3a8a;
+      color: white;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.3rem 0.65rem;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+    .graph-img {
+      width: 100%;
+      height: auto;
+      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+      display: block;
+    }
+    .figure-caption {
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+      color: #475569;
+      text-align: center;
+      line-height: 1.4;
+    }
+    .figure-caption strong {
+      color: #0f172a;
+    }
+
+    /* Dedicated WebAR Call-out Box */
+    .ar-interactive-banner {
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border: 2px dashed #3b82f6;
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+    }
+    .qr-container {
+      background: white;
+      padding: 0.8rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+    #qrcode {
+      width: 140px;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #qrcode img {
+      width: 100%;
+      height: 100%;
+    }
+    .qr-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #1e3a8a;
+      text-align: center;
+    }
+    .ar-banner-content h3 {
+      font-size: 1.3rem;
+      color: #1e3a8a;
+      font-weight: 800;
+      margin-bottom: 0.4rem;
+    }
+    .ar-banner-content p {
+      font-size: 0.93rem;
+      color: #1e293b;
+      line-height: 1.5;
+      margin-bottom: 0.6rem;
+    }
+    .ar-steps {
+      display: flex;
+      gap: 1.25rem;
+      margin-top: 0.5rem;
+    }
+    .ar-step-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #1d4ed8;
+    }
+    .step-num {
+      width: 22px;
+      height: 22px;
+      background: #2563eb;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+
+    /* Poster Footer */
+    .poster-footer {
+      background: #f1f5f9;
+      border-top: 1px solid #e2e8f0;
+      padding: 1.2rem 3rem;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      color: #64748b;
+    }
+
+    /* Print Styles */
+    @media print {
+      body {
+        background: white !important;
+        padding: 0 !important;
+      }
+      .toolbar {
+        display: none !important;
+      }
+      .poster-container {
+        box-shadow: none !important;
+        max-width: 100% !important;
+        border: none !important;
+      }
+      .poster-header {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      .ar-interactive-banner {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }
+
+    @media (max-width: 850px) {
+      .col-half, .col-8, .col-4 {
+        grid-column: span 12;
+      }
+      .ar-interactive-banner {
+        flex-direction: column;
+        text-align: center;
+      }
+      .ar-steps {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Interactive Control Bar -->
+  <div class="toolbar">
+    <div class="url-input-group">
+      <label for="urlInput">📱 Hosted AR URL:</label>
+      <input type="text" id="urlInput" class="url-input" value="https://omererez.github.io/nataly-ar-poster/" placeholder="Enter your GitHub Pages or local URL">
+    </div>
+    <div class="toolbar-actions">
+      <button class="btn" onclick="window.print()">🖨️ Print / Save PDF</button>
+      <button class="btn btn-secondary" onclick="downloadQRCode()">💾 Download QR Code</button>
+      <a href="index.html" target="_blank" class="btn btn-secondary">🚀 Launch AR App</a>
+      <a href="compiler.html" class="btn btn-secondary">⚡ Compiler</a>
+    </div>
+  </div>
+
+  <!-- Academic Poster Canvas -->
+  <div class="poster-container">
+    
+    <!-- Poster Header -->
+    <header class="poster-header">
+      <div class="conference-tag">Annual Academic Research Symposium 2026</div>
+      <h1 class="poster-title">Real-Time Dynamic Signal Tracking & Multi-Agent Optimization</h1>
+      <p class="poster-authors">Omer Erez, Academic Research Team</p>
+      <p class="poster-affiliation">Faculty of Computer Science • Technion – Israel Institute of Technology</p>
+    </header>
+
+    <!-- Poster Content Grid -->
+    <div class="poster-body">
+
+      <!-- Abstract & Context -->
+      <div class="section-box col-full">
+        <h2 class="section-title">Abstract & Research Overview</h2>
+        <p class="section-text">
+          We investigate adaptive signal recovery dynamics and high-dimensional parameter optimization. In standard print media, static figures fail to convey temporal progression and phase-space convergence trajectories. 
+          Through integrated <strong>Web Augmented Reality (WebAR)</strong> powered by MindAR, attendees can scan the graphs below directly using their mobile browser—without installing any application—to view the full dynamic simulations in situ over the poster.
+        </p>
+      </div>
+
+      <!-- AR TARGET 1: GRAPH 1 -->
+      <div class="graph-figure-card col-half">
+        <div class="ar-badge">
+          <span>📱 WebAR Target 1</span>
+        </div>
+        <img src="assets/graph1.png" alt="Figure 1: Temporal Signal Dynamics" class="graph-img" id="posterGraph1">
+        <p class="figure-caption">
+          <strong>Figure 1: Temporal Signal Dynamics & Spectral Response.</strong>
+          Point camera to trigger real-time wave propagation, variance decay, and critical point phase transitions.
+        </p>
+      </div>
+
+      <!-- AR TARGET 2: GRAPH 2 -->
+      <div class="graph-figure-card col-half">
+        <div class="ar-badge">
+          <span>📱 WebAR Target 2</span>
+        </div>
+        <img src="assets/graph2.png" alt="Figure 2: Multi-Agent Convergence Landscape" class="graph-img" id="posterGraph2">
+        <p class="figure-caption">
+          <strong>Figure 2: Multi-Agent Trajectories Across Non-Convex Loss Landscape.</strong>
+          Point camera to view animated path convergence, gradient descent step progression, and saddle avoidance.
+        </p>
+      </div>
+
+      <!-- Dedicated WebAR Interactive Call-Out -->
+      <div class="ar-interactive-banner col-full">
+        <div class="qr-container">
+          <div id="qrcode"></div>
+          <span class="qr-label">SCAN WITH SMARTPHONE</span>
+        </div>
+        <div class="ar-banner-content">
+          <h3>✨ Interactive Augmented Reality Poster</h3>
+          <p>
+            Experience this research in motion. Scan the QR code with your smartphone camera to launch the instant WebAR viewer. Point your camera at <strong>Figure 1</strong> or <strong>Figure 2</strong> to watch the graphs come alive as looping simulations.
+          </p>
+          <div class="ar-steps">
+            <div class="ar-step-item">
+              <span class="step-num">1</span>
+              <span>Scan QR Code</span>
+            </div>
+            <div class="ar-step-item">
+              <span class="step-num">2</span>
+              <span>Allow Camera Access</span>
+            </div>
+            <div class="ar-step-item">
+              <span class="step-num">3</span>
+              <span>Aim Camera at Either Graph</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Methodology Summary -->
+      <div class="section-box col-half">
+        <h2 class="section-title">Signal Invariant Detection</h2>
+        <p class="section-text">
+          Target 1 models stochastic damped oscillations under non-stationary Gaussian noise. The augmented overlay visualizes instantaneous frequency sweeps across normalized millisecond time-steps with 95% confidence bands.
+        </p>
+      </div>
+
+      <!-- Results & Conclusion -->
+      <div class="section-box col-half">
+        <h2 class="section-title">Convergence Analysis</h2>
+        <p class="section-text">
+          Target 2 illustrates the empirical trajectory of adaptive momentum algorithms navigating multimodal loss potentials. The AR overlay renders agent stepping vectors and gradient vector fields in real time.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Poster Footer -->
+    <footer class="poster-footer">
+      <span>Technion – Israel Institute of Technology • Department of Computer Science</span>
+      <span>Powered by MindAR & A-Frame • Zero App Install WebAR</span>
+    </footer>
+
+  </div>
+
+  <script>
+    let qrcodeObj = null;
+
+    function generateQR(url) {
+      const qrEl = document.getElementById("qrcode");
+      qrEl.innerHTML = "";
+      qrcodeObj = new QRCode(qrEl, {
+        text: url,
+        width: 140,
+        height: 140,
+        colorDark: "#0f172a",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    }
+
+    const urlInput = document.getElementById('urlInput');
+
+    // Auto-detect current URL
+    if (window.location.protocol.startsWith('http')) {
+      const currentDir = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        // Suggest the local HTTPS endpoint for phone testing
+        urlInput.value = "https://10.100.102.9:8443/index.html";
+      } else {
+        urlInput.value = currentDir + "index.html";
+      }
+    }
+
+    generateQR(urlInput.value);
+
+    // Live update QR code when input changes
+    urlInput.addEventListener('input', () => {
+      const val = urlInput.value.trim();
+      if (val) {
+        generateQR(val);
+      }
+    });
+
+    // Download QR Code as PNG
+    function downloadQRCode() {
+      const img = document.querySelector('#qrcode img');
+      if (img && img.src) {
+        const a = document.createElement('a');
+        a.href = img.src;
+        a.download = 'poster-ar-qrcode.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } else {
+        alert("QR Code image is still generating, please wait a second.");
+      }
+    }
+  </script>
+</body>
+</html>
