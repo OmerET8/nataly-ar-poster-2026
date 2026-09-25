@@ -25,11 +25,10 @@
       padding: 0;
       overflow: hidden;
       background: transparent !important;
-      background-color: transparent !important;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
-    /* Fullscreen AR Scene & Canvas Transparency */
+    /* Fullscreen AR Scene & Canvas */
     a-scene {
       width: 100vw;
       height: 100vh;
@@ -37,8 +36,6 @@
       top: 0;
       left: 0;
       z-index: 2;
-      background: transparent !important;
-      background-color: transparent !important;
     }
 
     .a-canvas {
@@ -47,12 +44,10 @@
       left: 0 !important;
       width: 100% !important;
       height: 100% !important;
-      background: transparent !important;
-      background-color: transparent !important;
       z-index: 2 !important;
     }
 
-    /* Ensure MindAR camera video feed is visible behind the 3D scene */
+    /* MindAR camera feed layer */
     body > video:not(#video1):not(#video2) {
       position: absolute !important;
       top: 0 !important;
@@ -79,7 +74,7 @@
       padding: 1.25rem 1rem;
     }
 
-    /* Top Bar Status */
+    /* Top Bar Status - High opacity RGBA avoids heavy mobile backdrop-filter blur */
     .top-bar {
       display: flex;
       justify-content: space-between;
@@ -87,10 +82,8 @@
       width: 100%;
     }
     .status-badge {
-      background: rgba(15, 23, 42, 0.75);
+      background: rgba(15, 23, 42, 0.90);
       border: 1px solid rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
       padding: 0.5rem 0.9rem;
       border-radius: 9999px;
       color: #f8fafc;
@@ -99,20 +92,20 @@
       display: inline-flex;
       align-items: center;
       gap: 0.45rem;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     }
     .pulse-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
       background: #38bdf8;
-      box-shadow: 0 0 8px #38bdf8;
+      box-shadow: 0 0 6px #38bdf8;
       animation: pulse 1.6s infinite;
+      will-change: transform, opacity;
     }
     .pulse-dot.active {
       background: #10b981;
-      box-shadow: 0 0 10px #10b981;
+      box-shadow: 0 0 8px #10b981;
     }
     @keyframes pulse {
       0% { transform: scale(0.9); opacity: 0.6; }
@@ -122,7 +115,7 @@
 
     .info-btn {
       pointer-events: auto;
-      background: rgba(15, 23, 42, 0.75);
+      background: rgba(15, 23, 42, 0.90);
       border: 1px solid rgba(255, 255, 255, 0.15);
       color: #f8fafc;
       width: 36px;
@@ -133,7 +126,6 @@
       justify-content: center;
       cursor: pointer;
       font-weight: bold;
-      backdrop-filter: blur(8px);
     }
 
     /* Scanning Reticle Frame */
@@ -146,7 +138,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: opacity 0.4s ease, transform 0.4s ease;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      will-change: opacity, transform;
     }
     .scan-guide.hidden {
       opacity: 0;
@@ -154,38 +147,37 @@
       pointer-events: none;
     }
 
-    /* Reticle Corner Brackets */
     .corner {
       position: absolute;
-      width: 24px;
-      height: 24px;
+      width: 22px;
+      height: 22px;
       border-color: #38bdf8;
       border-style: solid;
-      box-shadow: 0 0 6px rgba(56, 189, 248, 0.5);
     }
     .corner-tl { top: 0; left: 0; border-width: 3px 0 0 3px; border-top-left-radius: 6px; }
     .corner-tr { top: 0; right: 0; border-width: 3px 3px 0 0; border-top-right-radius: 6px; }
     .corner-bl { bottom: 0; left: 0; border-width: 0 0 3px 3px; border-bottom-left-radius: 6px; }
     .corner-br { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-bottom-right-radius: 6px; }
 
-    /* Scanning Light Beam */
+    /* Performance optimization: Hardware-accelerated GPU transform instead of 'top' */
     .scan-line {
       position: absolute;
       width: 100%;
       height: 2px;
       background: linear-gradient(90deg, transparent, #38bdf8, transparent);
-      box-shadow: 0 0 10px #38bdf8;
+      box-shadow: 0 0 8px #38bdf8;
       top: 0;
-      animation: scanAnim 2.4s ease-in-out infinite alternate;
+      animation: scanAnim 2.2s ease-in-out infinite alternate;
+      will-change: transform;
     }
     @keyframes scanAnim {
-      0% { top: 0%; opacity: 0.2; }
+      0% { transform: translateY(0); opacity: 0.2; }
       50% { opacity: 0.9; }
-      100% { top: 100%; opacity: 0.2; }
+      100% { transform: translateY(180px); opacity: 0.2; }
     }
 
     .guide-text {
-      background: rgba(15, 23, 42, 0.85);
+      background: rgba(15, 23, 42, 0.90);
       border: 1px solid rgba(255, 255, 255, 0.1);
       padding: 0.45rem 0.85rem;
       border-radius: 20px;
@@ -193,8 +185,7 @@
       font-size: 0.82rem;
       font-weight: 500;
       text-align: center;
-      backdrop-filter: blur(8px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     }
 
     /* Bottom Control Bar */
@@ -206,9 +197,8 @@
       pointer-events: auto;
     }
     .ui-chip {
-      background: rgba(15, 23, 42, 0.75);
+      background: rgba(15, 23, 42, 0.90);
       border: 1px solid rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(8px);
       color: #94a3b8;
       font-size: 0.75rem;
       padding: 0.35rem 0.75rem;
@@ -216,7 +206,7 @@
       font-weight: 500;
     }
 
-    /* Loading & Permission Splash Screen */
+    /* Splash Screen */
     .splash-screen {
       position: fixed;
       top: 0;
@@ -231,24 +221,24 @@
       justify-content: center;
       padding: 2rem;
       text-align: center;
-      transition: opacity 0.5s ease;
+      transition: opacity 0.4s ease;
     }
     .splash-screen.fade-out {
       opacity: 0;
       pointer-events: none;
     }
     .spinner {
-      width: 52px;
-      height: 52px;
+      width: 48px;
+      height: 48px;
       border: 3px solid rgba(56, 189, 248, 0.2);
       border-top-color: #38bdf8;
       border-radius: 50%;
-      animation: spin 0.9s linear infinite;
+      animation: spin 0.8s linear infinite;
       margin-bottom: 1.5rem;
+      will-change: transform;
     }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
     .splash-title {
       font-size: 1.35rem;
       font-weight: 700;
@@ -260,13 +250,12 @@
       font-size: 0.9rem;
       max-width: 320px;
       line-height: 1.5;
-      margin-bottom: 1.5rem;
     }
 
-    /* Modal / Alert for Camera or Missing Files */
+    /* Error Modal */
     .error-modal {
       display: none;
-      background: rgba(30, 41, 59, 0.95);
+      background: rgba(30, 41, 59, 0.98);
       border: 1px solid #ef4444;
       border-radius: 12px;
       padding: 1.25rem;
@@ -274,20 +263,10 @@
       color: #f8fafc;
       text-align: center;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-      pointer-events: auto;
-      margin-bottom: 1rem;
+      margin-top: 1.5rem;
     }
-    .error-modal h3 {
-      color: #ef4444;
-      font-size: 1.1rem;
-      margin-bottom: 0.4rem;
-    }
-    .error-modal p {
-      font-size: 0.85rem;
-      color: #cbd5e1;
-      margin-bottom: 1rem;
-      line-height: 1.4;
-    }
+    .error-modal h3 { color: #ef4444; font-size: 1.1rem; margin-bottom: 0.4rem; }
+    .error-modal p { font-size: 0.85rem; color: #cbd5e1; margin-bottom: 1rem; line-height: 1.4; }
     .modal-btn {
       background: #2563eb;
       color: white;
@@ -308,27 +287,25 @@
   <div class="splash-screen" id="splashScreen">
     <div class="spinner"></div>
     <h2 class="splash-title">Initializing WebAR</h2>
-    <p class="splash-desc">Requesting camera access and loading neural feature trackers for the poster...</p>
-    
+    <p class="splash-desc">Requesting camera access and loading tracking features...</p>
+
     <div class="error-modal" id="missingTargetModal">
       <h3>Target File Notice</h3>
-      <p id="targetErrorMessage">Looking for <code>assets/targets.mind</code>...</p>
-      <a href="compiler.html" class="modal-btn">Open Targets Compiler</a>
+      <p id="targetErrorMessage">Unable to load targets or access camera.</p>
+      <a href="compiler.html" class="modal-btn">Open Compiler</a>
     </div>
   </div>
 
   <!-- UI Overlay -->
   <div class="ar-ui-overlay">
-    <!-- Top Bar -->
     <div class="top-bar">
       <div class="status-badge">
         <span class="pulse-dot" id="statusDot"></span>
         <span id="statusLabel">AR Scanning Active</span>
       </div>
-      <button class="info-btn" onclick="alert('Point camera at Figure 1 or Figure 2 on the conference poster. The static graph will instantly transform into an interactive simulation video overlay.')">?</button>
+      <button class="info-btn" onclick="alert('Point camera at Figure 1 or Figure 2 on the conference poster.')">?</button>
     </div>
 
-    <!-- Central Scanning Reticle -->
     <div class="scan-guide" id="scanGuide">
       <div class="corner corner-tl"></div>
       <div class="corner corner-tr"></div>
@@ -338,89 +315,77 @@
       <div class="guide-text">Aim camera at Figure 1 or 2</div>
     </div>
 
-    <!-- Bottom Info -->
     <div class="bottom-bar">
       <span class="ui-chip">MindAR Multi-Track (2 Targets)</span>
-      <span class="ui-chip">Silent Auto-Loop</span>
+      <span class="ui-chip">Hardware Accelerated</span>
     </div>
   </div>
 
-  <!-- A-Frame AR Scene -->
-  <!-- 
-    mindar-image parameters:
-    - imageTargetSrc: Path to compiled binary target file
-    - maxTrack: 2 (allow tracking both graphs simultaneously if both in view)
-    - filterMinCF / filterBeta: Jitter reduction smoothing filters
+  <!--
+    Optimizations applied to a-scene:
+    1. uiLoading/uiScanning/uiError: "no" disables redundant MindAR default DOM creation.
+    2. renderer="antialias: false; alpha: true; precision: mediump; powerPreference: high-performance;" disables expensive MSAA on mobile.
+    3. filterMinCF & filterBeta tuned for responsiveness vs jitter.
   -->
-  <a-scene 
+  <a-scene
     id="arScene"
-    mindar-image="imageTargetSrc: ./assets/targets.mind; maxTrack: 2; filterMinCF: 0.0001; filterBeta: 0.001; warmupTolerance: 5; missTolerance: 8;"
-    color-space="sRGB" 
-    renderer="colorManagement: true, physicallyCorrectLights: false" 
-    vr-mode-ui="enabled: false" 
+    mindar-image="imageTargetSrc: ./assets/targets.mind; maxTrack: 2; filterMinCF: 0.001; filterBeta: 10; warmupTolerance: 3; missTolerance: 5; uiLoading: no; uiScanning: no; uiError: no;"
+    renderer="antialias: false; alpha: true; precision: mediump; powerPreference: high-performance;"
+    vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false">
-    
-    <a-assets timeout="10000">
-      <!-- Video 1 (16:9 aspect ratio, muted, autoplay, looping) -->
-      <video 
-        id="video1" 
-        src="./assets/video1.mp4" 
-        preload="auto" 
-        loop="true" 
-        playsinline 
-        webkit-playsinline 
-        muted 
+
+    <!-- Use preload="metadata" to prevent memory exhaustion and network stalls -->
+    <a-assets timeout="8000">
+      <video
+        id="video1"
+        src="./assets/video1.mp4"
+        preload="metadata"
+        loop="true"
+        playsinline
+        webkit-playsinline
+        muted
         crossorigin="anonymous">
       </video>
 
-      <!-- Video 2 (16:9 aspect ratio, muted, autoplay, looping) -->
-      <video 
-        id="video2" 
-        src="./assets/video2.mp4" 
-        preload="auto" 
-        loop="true" 
-        playsinline 
-        webkit-playsinline 
-        muted 
+      <video
+        id="video2"
+        src="./assets/video2.mp4"
+        preload="metadata"
+        loop="true"
+        playsinline
+        webkit-playsinline
+        muted
         crossorigin="anonymous">
       </video>
     </a-assets>
 
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <!-- 
-      Target 0: Graph 1 (Figure 1 on the poster)
-      Plane matches the exact 16:9 aspect ratio (width: 1, height: 0.5625 = 720/1280)
-    -->
-    <a-entity id="target0" mindar-image-target="targetIndex: 0">
-      <a-video 
-        id="arVideo1" 
-        src="#video1" 
-        width="1" 
-        height="0.5625" 
-        position="0 0 0" 
+    <!-- Initially visible="false" so Three.js ignores them until tracked -->
+    <a-entity id="target0" mindar-image-target="targetIndex: 0" visible="false">
+      <a-video
+        id="arVideo1"
+        src="#video1"
+        width="1"
+        height="0.5625"
+        position="0 0 0"
         rotation="0 0 0">
       </a-video>
     </a-entity>
 
-    <!-- 
-      Target 1: Graph 2 (Figure 2 on the poster)
-      Plane matches the exact 16:9 aspect ratio (width: 1, height: 0.5625 = 720/1280)
-    -->
-    <a-entity id="target1" mindar-image-target="targetIndex: 1">
-      <a-video 
-        id="arVideo2" 
-        src="#video2" 
-        width="1" 
-        height="0.5625" 
-        position="0 0 0" 
+    <a-entity id="target1" mindar-image-target="targetIndex: 1" visible="false">
+      <a-video
+        id="arVideo2"
+        src="#video2"
+        width="1"
+        height="0.5625"
+        position="0 0 0"
         rotation="0 0 0">
       </a-video>
     </a-entity>
   </a-scene>
 
   <script>
-    // DOM Elements
     const scene = document.querySelector('#arScene');
     const splashScreen = document.querySelector('#splashScreen');
     const statusDot = document.querySelector('#statusDot');
@@ -433,14 +398,21 @@
 
     let activeTargetsCount = 0;
 
-    // Trigger haptic vibration on mobile if supported
+    // --- CRITICAL PERFORMANCE OPTIMIZATION: DPR CLAMPING ---
+    // Clamping device pixel ratio to max 1.5 prevents mobile GPUs from melting on high-DPI screens.
+    scene.addEventListener('loaded', () => {
+      const renderer = scene.renderer;
+      if (renderer) {
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+      }
+    });
+
     function triggerHaptic() {
       if (navigator.vibrate) {
-        try { navigator.vibrate(40); } catch(e) {}
+        try { navigator.vibrate(30); } catch (e) {}
       }
     }
 
-    // Update UI when tracking status changes
     function updateUI() {
       if (activeTargetsCount > 0) {
         scanGuide.classList.add('hidden');
@@ -452,86 +424,60 @@
       }
     }
 
-    // MindAR scene ready event
     scene.addEventListener('arReady', () => {
-      console.log('MindAR scene is ready!');
       splashScreen.classList.add('fade-out');
-      setTimeout(() => { splashScreen.style.display = 'none'; }, 500);
+      setTimeout(() => { splashScreen.style.display = 'none'; }, 400);
     });
 
-    // MindAR scene error event (e.g. camera permission denied or target file not found)
-    scene.addEventListener('arError', (event) => {
-      console.error('MindAR error:', event);
+    scene.addEventListener('arError', () => {
       const modal = document.querySelector('#missingTargetModal');
       const msg = document.querySelector('#targetErrorMessage');
       modal.style.display = 'block';
-      msg.innerHTML = "Camera permission denied or target file <code>assets/targets.mind</code> not found.<br><br>Make sure to allow camera access and run <code>compiler.html</code> to compile your targets.";
+      msg.innerHTML = "Camera permission denied or <code>assets/targets.mind</code> missing.<br>Verify assets and reload.";
     });
 
-    // Check if targets.mind exists; if not, suggest compiling or sample band fallback
-    fetch('./assets/targets.mind', { method: 'HEAD' })
-      .then(res => {
-        if (!res.ok) {
-          console.warn('targets.mind not yet compiled.');
-          const modal = document.querySelector('#missingTargetModal');
-          const msg = document.querySelector('#targetErrorMessage');
-          modal.style.display = 'block';
-          msg.innerHTML = "<code>assets/targets.mind</code> is not created yet.<br>Click below to open the 1-click Targets Compiler!";
-        }
-      })
-      .catch(() => {});
-
-    // Ensure strict muting for universal iOS Safari & Android Chrome autoplay
     video1.muted = true;
     video2.muted = true;
 
-    // Optional touch unlock for strict mobile Safari policies
+    // Safari iOS audio/video resume safety
     window.addEventListener('touchstart', () => {
-      if (video1.paused && activeTargetsCount === 0) {
-        video1.play().then(() => video1.pause()).catch(() => {});
-      }
-      if (video2.paused && activeTargetsCount === 0) {
-        video2.play().then(() => video2.pause()).catch(() => {});
-      }
+      if (video1.paused && activeTargetsCount === 0) video1.load();
+      if (video2.paused && activeTargetsCount === 0) video2.load();
     }, { once: true });
 
-    // Target 0 (Graph 1) Found
+    // Target 0 (Figure 1)
     target0.addEventListener('targetFound', () => {
-      console.log('Target 0 (Graph 1) Found');
+      target0.setAttribute('visible', 'true');
       activeTargetsCount++;
       statusLabel.innerText = "Tracking Figure 1";
       triggerHaptic();
       updateUI();
 
-      // Play video 1 in loop
       video1.currentTime = 0;
-      video1.play().catch(e => console.warn('Video 1 play failed:', e));
+      video1.play().catch(() => {});
     });
 
-    // Target 0 (Graph 1) Lost
     target0.addEventListener('targetLost', () => {
-      console.log('Target 0 (Graph 1) Lost');
+      target0.setAttribute('visible', 'false'); // Stops Three.js from uploading and rendering
       activeTargetsCount = Math.max(0, activeTargetsCount - 1);
       video1.pause();
       updateUI();
     });
 
-    // Target 1 (Graph 2) Found
+    // Target 1 (Figure 2)
     target1.addEventListener('targetFound', () => {
-      console.log('Target 1 (Graph 2) Found');
+      target1.setAttribute('visible', 'true');
       activeTargetsCount++;
       statusLabel.innerText = "Tracking Figure 2";
       triggerHaptic();
       updateUI();
 
-      // Play video 2 in loop
       video2.currentTime = 0;
-      video2.play().catch(e => console.warn('Video 2 play failed:', e));
+      video2.play().catch(() => {});
     });
 
-    // Target 1 (Graph 2) Lost
     target1.addEventListener('targetLost', () => {
-      console.log('Target 1 (Graph 2) Lost');
+      target1.setAttribute('visible', 'false'); // Stops Three.js from uploading and rendering
       activeTargetsCount = Math.max(0, activeTargetsCount - 1);
       video2.pause();
       updateUI();
