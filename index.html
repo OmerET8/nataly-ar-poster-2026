@@ -47,11 +47,7 @@
       z-index: 2 !important;
     }
 
-    /*
-      FIX 1: MindAR Camera Feed Layer.
-      DO NOT apply !important to width, height, top, left, or object-fit!
-      MindAR calculates precise offsets to match camera projection.
-    */
+    /* MindAR camera feed: Let MindAR manage dimensions; do not override width/height/object-fit */
     body > video:not(#video1):not(#video2) {
       position: absolute;
       z-index: 1 !important;
@@ -131,7 +127,7 @@
     /* Scanning Reticle Frame */
     .scan-guide {
       align-self: center;
-      width: 78vw;
+      width: 75vw;
       max-width: 340px;
       aspect-ratio: 16 / 9;
       position: relative;
@@ -147,7 +143,6 @@
       pointer-events: none;
     }
 
-    /* Responsive adjustment for landscape screen heights */
     @media (orientation: landscape) {
       .scan-guide {
         max-height: 48vh;
@@ -246,7 +241,7 @@
       justify-content: center;
       padding: 2rem;
       text-align: center;
-      transition: opacity 0.3s ease;
+      transition: opacity 0.25s ease;
     }
     .splash-screen.fade-out {
       opacity: 0;
@@ -301,7 +296,7 @@
       display: inline-block;
     }
 
-    /* Horizontal Orientation Prompt Overlay */
+    /* Orientation Prompt Modal */
     .orientation-overlay {
       position: fixed;
       top: 0;
@@ -401,11 +396,17 @@
       color: #94a3b8;
       font-size: 0.88rem;
       line-height: 1.45;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.2rem;
     }
     .orientation-text strong {
       color: #38bdf8;
       font-weight: 600;
+    }
+    .orientation-note {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-bottom: 1.2rem;
+      display: block;
     }
     .orientation-btn {
       background: linear-gradient(135deg, #0284c7, #2563eb);
@@ -426,6 +427,7 @@
   </style>
 
   <script>
+    // --- 1. DYNAMIC ORIENTATION CAMERA CONSTRAINTS ---
     let cameraTrack = null;
 
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -434,14 +436,19 @@
       navigator.mediaDevices.getUserMedia = async function (constraints) {
         if (constraints && constraints.video) {
           const videoConstraints = typeof constraints.video === 'object' ? constraints.video : {};
+          const isLandscape = window.innerWidth > window.innerHeight;
+
+          // Adapt requested stream geometry to current screen orientation
+          const idealW = isLandscape ? 1280 : 720;
+          const idealH = isLandscape ? 720 : 1280;
 
           const enhancedConstraints = {
             ...constraints,
             video: {
               ...videoConstraints,
               facingMode: videoConstraints.facingMode || { ideal: "environment" },
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
+              width: { ideal: idealW },
+              height: { ideal: idealH },
               frameRate: { ideal: 60, min: 30 },
               advanced: [
                 ...(videoConstraints.advanced || []),
@@ -455,7 +462,7 @@
             initCameraTrack(stream);
             return stream;
           } catch (err) {
-            console.warn("Optimized camera constraints rejected; falling back:", err);
+            console.warn("Optimized constraints fallback:", err);
             const fallbackStream = await origGetUserMedia(constraints);
             initCameraTrack(fallbackStream);
             return fallbackStream;
@@ -486,8 +493,8 @@
   <!-- Loading Splash Screen -->
   <div class="splash-screen" id="splashScreen">
     <div class="spinner"></div>
-    <h2 class="splash-title">Initializing WebAR</h2>
-    <p class="splash-desc">initializing tracker...</p>
+    <h2 class="splash-title" id="splashTitle">Initializing WebAR</h2>
+    <p class="splash-desc" id="splashDesc">calibrating tracking engine...</p>
 
     <div class="error-modal" id="missingTargetModal">
       <h3>Target File Notice</h3>
@@ -504,8 +511,9 @@
       </div>
       <h3 class="orientation-title">Hold Phone Horizontally</h3>
       <p class="orientation-text">
-        For the best AR alignment and wide view of poster figures, please rotate your device to <strong>landscape mode</strong>.
+        For the best AR alignment and wide view of poster figures, rotate your device to <strong>landscape mode</strong>.
       </p>
+      <span class="orientation-note">Ensure device Auto-Rotate is enabled</span>
       <button class="orientation-btn" id="dismissOrientationBtn">Continue</button>
     </div>
   </div>
@@ -520,7 +528,7 @@
         <span class="pulse-dot" id="statusDot"></span>
         <span id="statusLabel">AR Scanning Active</span>
       </div>
-      <button class="info-btn" onclick="alert('Point camera at the figures on the conference poster. Tap screen anywhere to autofocus.')">?</button>
+      <button class="info-btn" onclick="alert('Point camera at the poster figures. Tap screen anywhere to autofocus.')">?</button>
     </div>
 
     <!-- Scan Reticle -->
@@ -602,6 +610,8 @@
   <script>
     const scene = document.querySelector('#arScene');
     const splashScreen = document.querySelector('#splashScreen');
+    const splashTitle = document.querySelector('#splashTitle');
+    const splashDesc = document.querySelector('#splashDesc');
     const statusDot = document.querySelector('#statusDot');
     const statusLabel = document.querySelector('#statusLabel');
     const scanGuide = document.querySelector('#scanGuide');
@@ -616,12 +626,9 @@
     const dismissOrientationBtn = document.querySelector('#dismissOrientationBtn');
 
     let activeTargetsCount = 0;
-    let orientationPromptDismissed = false;
+    let orientationPromptDismissed = sessionStorage.getItem('ar_dismiss_prompt') === 'true';
 
     function isPortrait() {
-      if (window.matchMedia && window.matchMedia("(orientation: portrait)").matches) {
-        return true;
-      }
       return window.innerHeight > window.innerWidth;
     }
 
@@ -636,6 +643,7 @@
 
     function dismissOrientationPrompt() {
       orientationPromptDismissed = true;
+      sessionStorage.setItem('ar_dismiss_prompt', 'true');
       orientationOverlay.classList.remove('active');
       if (video1.paused && activeTargetsCount === 0) video1.load();
       if (video2.paused && activeTargetsCount === 0) video2.load();
@@ -643,62 +651,47 @@
 
     dismissOrientationBtn.addEventListener('click', dismissOrientationPrompt);
 
-    /*
-      FIX 2: ROBUST ORIENTATION RE-CALIBRATION
-      Mobile browser orientation animations take 200-300ms to complete.
-      We execute staged resynchronization to ensure MindAR's controller,
-      projection matrix, and A-Frame camera match the new landscape/portrait canvas.
-    */
-    function handleScreenRotation() {
-      evaluateOrientationPrompt();
+    // --- 2. FOOLPROOF ORIENTATION CHANGE RE-CALIBRATION ---
+    // MindAR's WebGL tracking pipeline must re-initialize its feature buffers upon orientation flips.
+    let currentOrientation = isPortrait() ? 'portrait' : 'landscape';
+    let isReorienting = false;
 
-      const syncARViewport = () => {
-        const width = window.innerWidth;
-        const height = window.innerHeight;
+    function handleDeviceOrientationChange() {
+      if (isReorienting) return;
 
-        // 1. Resynchronize A-Frame Three.js Renderer
-        if (scene.renderer) {
-          scene.renderer.setSize(width, height);
-          scene.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.2));
+      setTimeout(() => {
+        const nextOrientation = isPortrait() ? 'portrait' : 'landscape';
+
+        // Detect genuine aspect ratio flip (ignores URL bar expand/collapse)
+        if (nextOrientation !== currentOrientation) {
+          isReorienting = true;
+          sessionStorage.setItem('ar_reoriented', 'true');
+
+          // Smooth user feedback
+          splashTitle.innerText = "Re-aligning AR";
+          splashDesc.innerText = "calibrating tracker for new orientation...";
+          splashScreen.style.display = 'flex';
+          splashScreen.classList.remove('fade-out');
+
+          // Clean reload to bind fresh WebGL textures and camera stream
+          setTimeout(() => {
+            window.location.reload();
+          }, 150);
         }
-
-        // 2. Trigger A-Frame Scene internal resize
-        if (typeof scene.resize === 'function') {
-          scene.resize();
-        }
-
-        // 3. Force MindAR Image System to recalculate video crop & projection matrix
-        const arSystem = scene.systems ? scene.systems['mindar-image-system'] : null;
-        if (arSystem) {
-          if (typeof arSystem.resize === 'function') {
-            arSystem.resize();
-          }
-        }
-
-        // 4. Update A-Frame Camera Projection Matrix
-        if (scene.camera) {
-          scene.camera.aspect = width / height;
-          scene.camera.updateProjectionMatrix();
-        }
-
-        // 5. Ensure camera feed did not pause during transition
-        const cameraFeed = document.querySelector('body > video:not(#video1):not(#video2)');
-        if (cameraFeed && cameraFeed.paused) {
-          cameraFeed.play().catch(() => {});
-        }
-      };
-
-      // Staged execution to handle iOS Safari & Android reflow intervals
-      syncARViewport();
-      setTimeout(syncARViewport, 120);
-      setTimeout(syncARViewport, 300);
-      setTimeout(syncARViewport, 600);
+      }, 200);
     }
 
-    window.addEventListener('resize', handleScreenRotation);
-    window.addEventListener('orientationchange', handleScreenRotation);
+    window.addEventListener('resize', handleDeviceOrientationChange);
+    window.addEventListener('orientationchange', handleDeviceOrientationChange);
     if (screen.orientation) {
-      screen.orientation.addEventListener('change', handleScreenRotation);
+      screen.orientation.addEventListener('change', handleDeviceOrientationChange);
+    }
+
+    // Check if returning from an orientation reload
+    if (sessionStorage.getItem('ar_reoriented') === 'true') {
+      sessionStorage.removeItem('ar_reoriented');
+      splashTitle.innerText = "WebAR Ready";
+      splashDesc.innerText = "loading tracking stream...";
     }
 
     // GPU PIXEL RATIO CLAMPING
@@ -780,7 +773,7 @@
       splashScreen.classList.add('fade-out');
       setTimeout(() => {
         splashScreen.style.display = 'none';
-        handleScreenRotation();
+        evaluateOrientationPrompt();
       }, 300);
     });
 
