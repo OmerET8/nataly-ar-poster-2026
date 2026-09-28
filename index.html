@@ -47,15 +47,15 @@
       z-index: 2 !important;
     }
 
-    /* MindAR camera feed layer */
+    /*
+      FIX 1: MindAR Camera Feed Layer.
+      DO NOT apply !important to width, height, top, left, or object-fit!
+      MindAR calculates precise offsets to match camera projection.
+    */
     body > video:not(#video1):not(#video2) {
-      position: absolute !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      object-fit: cover !important;
+      position: absolute;
       z-index: 1 !important;
+      pointer-events: none;
       display: block !important;
     }
 
@@ -145,6 +145,14 @@
       opacity: 0;
       transform: scale(0.95);
       pointer-events: none;
+    }
+
+    /* Responsive adjustment for landscape screen heights */
+    @media (orientation: landscape) {
+      .scan-guide {
+        max-height: 48vh;
+        width: auto;
+      }
     }
 
     .corner {
@@ -293,7 +301,7 @@
       display: inline-block;
     }
 
-    /* --- HORIZONTAL ORIENTATION PROMPT OVERLAY --- */
+    /* Horizontal Orientation Prompt Overlay */
     .orientation-overlay {
       position: fixed;
       top: 0;
@@ -334,7 +342,6 @@
       transform: translateY(0) scale(1);
     }
 
-    /* Rotating Phone Animation */
     .phone-anim-box {
       width: 70px;
       height: 70px;
@@ -378,15 +385,9 @@
       border-radius: 2px;
     }
     @keyframes rotatePhone {
-      0%, 20% {
-        transform: rotate(0deg) scale(1);
-      }
-      50%, 75% {
-        transform: rotate(-90deg) scale(1.08);
-      }
-      95%, 100% {
-        transform: rotate(0deg) scale(1);
-      }
+      0%, 20% { transform: rotate(0deg) scale(1); }
+      50%, 75% { transform: rotate(-90deg) scale(1.08); }
+      95%, 100% { transform: rotate(0deg) scale(1); }
     }
 
     .orientation-title {
@@ -425,7 +426,6 @@
   </style>
 
   <script>
-    // --- 1. CAMERA STREAM INTERCEPT: FORCE 60 FPS, 720P, & CONTINUOUS AUTOFOCUS ---
     let cameraTrack = null;
 
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -440,7 +440,7 @@
             video: {
               ...videoConstraints,
               facingMode: videoConstraints.facingMode || { ideal: "environment" },
-              width: { ideal: 1280},
+              width: { ideal: 1280 },
               height: { ideal: 720 },
               frameRate: { ideal: 60, min: 30 },
               advanced: [
@@ -618,7 +618,6 @@
     let activeTargetsCount = 0;
     let orientationPromptDismissed = false;
 
-    // --- ORIENTATION CHECK LOGIC ---
     function isPortrait() {
       if (window.matchMedia && window.matchMedia("(orientation: portrait)").matches) {
         return true;
@@ -628,8 +627,6 @@
 
     function evaluateOrientationPrompt() {
       if (orientationPromptDismissed) return;
-
-      // Show prompt if holding vertically; automatically dismiss if user rotates horizontally
       if (isPortrait()) {
         orientationOverlay.classList.add('active');
       } else {
@@ -640,17 +637,71 @@
     function dismissOrientationPrompt() {
       orientationPromptDismissed = true;
       orientationOverlay.classList.remove('active');
-
-      // Primes videos to comply with Safari iOS touch requirements
       if (video1.paused && activeTargetsCount === 0) video1.load();
       if (video2.paused && activeTargetsCount === 0) video2.load();
     }
 
     dismissOrientationBtn.addEventListener('click', dismissOrientationPrompt);
-    window.addEventListener('resize', evaluateOrientationPrompt);
-    window.addEventListener('orientationchange', evaluateOrientationPrompt);
 
-    // --- 2. GPU PIXEL RATIO CLAMPING ---
+    /*
+      FIX 2: ROBUST ORIENTATION RE-CALIBRATION
+      Mobile browser orientation animations take 200-300ms to complete.
+      We execute staged resynchronization to ensure MindAR's controller,
+      projection matrix, and A-Frame camera match the new landscape/portrait canvas.
+    */
+    function handleScreenRotation() {
+      evaluateOrientationPrompt();
+
+      const syncARViewport = () => {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        // 1. Resynchronize A-Frame Three.js Renderer
+        if (scene.renderer) {
+          scene.renderer.setSize(width, height);
+          scene.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.2));
+        }
+
+        // 2. Trigger A-Frame Scene internal resize
+        if (typeof scene.resize === 'function') {
+          scene.resize();
+        }
+
+        // 3. Force MindAR Image System to recalculate video crop & projection matrix
+        const arSystem = scene.systems ? scene.systems['mindar-image-system'] : null;
+        if (arSystem) {
+          if (typeof arSystem.resize === 'function') {
+            arSystem.resize();
+          }
+        }
+
+        // 4. Update A-Frame Camera Projection Matrix
+        if (scene.camera) {
+          scene.camera.aspect = width / height;
+          scene.camera.updateProjectionMatrix();
+        }
+
+        // 5. Ensure camera feed did not pause during transition
+        const cameraFeed = document.querySelector('body > video:not(#video1):not(#video2)');
+        if (cameraFeed && cameraFeed.paused) {
+          cameraFeed.play().catch(() => {});
+        }
+      };
+
+      // Staged execution to handle iOS Safari & Android reflow intervals
+      syncARViewport();
+      setTimeout(syncARViewport, 120);
+      setTimeout(syncARViewport, 300);
+      setTimeout(syncARViewport, 600);
+    }
+
+    window.addEventListener('resize', handleScreenRotation);
+    window.addEventListener('orientationchange', handleScreenRotation);
+    if (screen.orientation) {
+      screen.orientation.addEventListener('change', handleScreenRotation);
+    }
+
+    // GPU PIXEL RATIO CLAMPING
     scene.addEventListener('loaded', () => {
       const renderer = scene.renderer;
       if (renderer) {
@@ -658,7 +709,7 @@
       }
     });
 
-    // --- 3. REAL-TIME FPS MONITOR ---
+    // REAL-TIME FPS MONITOR
     let frameTimes = 0;
     let lastFpsUpdate = performance.now();
     function trackFPS(now) {
@@ -673,7 +724,7 @@
     }
     requestAnimationFrame(trackFPS);
 
-    // --- 4. TAP-TO-AUTOFOCUS CONTROLLER ---
+    // TAP-TO-AUTOFOCUS CONTROLLER
     async function triggerAutofocus(e) {
       const x = e.clientX || (e.touches && e.touches[0].clientX);
       const y = e.clientY || (e.touches && e.touches[0].clientY);
@@ -729,7 +780,7 @@
       splashScreen.classList.add('fade-out');
       setTimeout(() => {
         splashScreen.style.display = 'none';
-        evaluateOrientationPrompt();
+        handleScreenRotation();
       }, 300);
     });
 
@@ -743,7 +794,6 @@
     video1.muted = true;
     video2.muted = true;
 
-    // Safari iOS autoplay touch unlock
     window.addEventListener('touchstart', () => {
       if (video1.paused && activeTargetsCount === 0) video1.load();
       if (video2.paused && activeTargetsCount === 0) video2.load();
