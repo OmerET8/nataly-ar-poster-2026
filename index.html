@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>AR Academic Poster — MindAR</title>
-  
+  <title>AR Academic Poster — Optimized MindAR</title>
+
   <!-- A-Frame library (v1.5.0) -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <!-- MindAR A-Frame extension (v1.2.5) -->
@@ -24,7 +24,7 @@
       margin: 0;
       padding: 0;
       overflow: hidden;
-      background: transparent !important;
+      background: #000 !important;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
@@ -74,15 +74,15 @@
       padding: 1.25rem 1rem;
     }
 
-    /* Top Bar Status - High opacity RGBA avoids heavy mobile backdrop-filter blur */
     .top-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       width: 100%;
+      pointer-events: auto;
     }
     .status-badge {
-      background: rgba(15, 23, 42, 0.90);
+      background: rgba(15, 23, 42, 0.88);
       border: 1px solid rgba(255, 255, 255, 0.15);
       padding: 0.5rem 0.9rem;
       border-radius: 9999px;
@@ -115,7 +115,7 @@
 
     .info-btn {
       pointer-events: auto;
-      background: rgba(15, 23, 42, 0.90);
+      background: rgba(15, 23, 42, 0.88);
       border: 1px solid rgba(255, 255, 255, 0.15);
       color: #f8fafc;
       width: 36px;
@@ -138,12 +138,12 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: opacity 0.3s ease, transform 0.3s ease;
+      transition: opacity 0.25s ease, transform 0.25s ease;
       will-change: opacity, transform;
     }
     .scan-guide.hidden {
       opacity: 0;
-      transform: scale(1.05);
+      transform: scale(0.95);
       pointer-events: none;
     }
 
@@ -159,7 +159,6 @@
     .corner-bl { bottom: 0; left: 0; border-width: 0 0 3px 3px; border-bottom-left-radius: 6px; }
     .corner-br { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-bottom-right-radius: 6px; }
 
-    /* Performance optimization: Hardware-accelerated GPU transform instead of 'top' */
     .scan-line {
       position: absolute;
       width: 100%;
@@ -167,7 +166,7 @@
       background: linear-gradient(90deg, transparent, #38bdf8, transparent);
       box-shadow: 0 0 8px #38bdf8;
       top: 0;
-      animation: scanAnim 2.2s ease-in-out infinite alternate;
+      animation: scanAnim 2s ease-in-out infinite alternate;
       will-change: transform;
     }
     @keyframes scanAnim {
@@ -177,7 +176,7 @@
     }
 
     .guide-text {
-      background: rgba(15, 23, 42, 0.90);
+      background: rgba(15, 23, 42, 0.88);
       border: 1px solid rgba(255, 255, 255, 0.1);
       padding: 0.45rem 0.85rem;
       border-radius: 20px;
@@ -197,13 +196,31 @@
       pointer-events: auto;
     }
     .ui-chip {
-      background: rgba(15, 23, 42, 0.90);
+      background: rgba(15, 23, 42, 0.88);
       border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #94a3b8;
+      color: #cbd5e1;
       font-size: 0.75rem;
-      padding: 0.35rem 0.75rem;
+      padding: 0.4rem 0.8rem;
       border-radius: 9999px;
       font-weight: 500;
+    }
+
+    /* Tap-to-Focus Reticle */
+    .focus-ring {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border: 2px solid #38bdf8;
+      border-radius: 50%;
+      pointer-events: none;
+      transform: translate(-50%, -50%) scale(1.4);
+      opacity: 0;
+      transition: transform 0.25s ease-out, opacity 0.25s ease-out;
+      z-index: 50;
+    }
+    .focus-ring.active {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
     }
 
     /* Splash Screen */
@@ -221,15 +238,15 @@
       justify-content: center;
       padding: 2rem;
       text-align: center;
-      transition: opacity 0.4s ease;
+      transition: opacity 0.3s ease;
     }
     .splash-screen.fade-out {
       opacity: 0;
       pointer-events: none;
     }
     .spinner {
-      width: 48px;
-      height: 48px;
+      width: 44px;
+      height: 44px;
       border: 3px solid rgba(56, 189, 248, 0.2);
       border-top-color: #38bdf8;
       border-radius: 50%;
@@ -240,46 +257,101 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .splash-title {
-      font-size: 1.35rem;
+      font-size: 1.3rem;
       font-weight: 700;
       color: #f8fafc;
       margin-bottom: 0.5rem;
     }
     .splash-desc {
       color: #94a3b8;
-      font-size: 0.9rem;
-      max-width: 320px;
-      line-height: 1.5;
+      font-size: 0.88rem;
+      max-width: 300px;
+      line-height: 1.4;
     }
 
-    /* Error Modal */
     .error-modal {
       display: none;
       background: rgba(30, 41, 59, 0.98);
       border: 1px solid #ef4444;
       border-radius: 12px;
       padding: 1.25rem;
-      max-width: 340px;
+      max-width: 320px;
       color: #f8fafc;
       text-align: center;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
       margin-top: 1.5rem;
     }
     .error-modal h3 { color: #ef4444; font-size: 1.1rem; margin-bottom: 0.4rem; }
-    .error-modal p { font-size: 0.85rem; color: #cbd5e1; margin-bottom: 1rem; line-height: 1.4; }
+    .error-modal p { font-size: 0.85rem; color: #cbd5e1; margin-bottom: 1rem; }
     .modal-btn {
       background: #2563eb;
       color: white;
       border: none;
-      padding: 0.6rem 1.2rem;
+      padding: 0.55rem 1.1rem;
       border-radius: 6px;
       font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
       text-decoration: none;
       display: inline-block;
     }
   </style>
+
+  <script>
+    // --- 1. CAMERA STREAM INTERCEPT: FORCE 60 FPS, 720P, & CONTINUOUS AUTOFOCUS ---
+    let cameraTrack = null;
+
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      const origGetUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+
+      navigator.mediaDevices.getUserMedia = async function (constraints) {
+        if (constraints && constraints.video) {
+          const videoConstraints = typeof constraints.video === 'object' ? constraints.video : {};
+
+          // Request 60 FPS hardware capture at 720p (sweet spot for TensorFlow.js image tracking)
+          const enhancedConstraints = {
+            ...constraints,
+            video: {
+              ...videoConstraints,
+              facingMode: videoConstraints.facingMode || { ideal: "environment" },
+              width: { ideal: 1280, max: 1920 },
+              height: { ideal: 720, max: 1080 },
+              frameRate: { ideal: 60, min: 30 },
+              advanced: [
+                ...(videoConstraints.advanced || []),
+                { focusMode: "continuous" }
+              ]
+            }
+          };
+
+          try {
+            const stream = await origGetUserMedia(enhancedConstraints);
+            initCameraTrack(stream);
+            return stream;
+          } catch (err) {
+            console.warn("Optimized camera constraints rejected; falling back:", err);
+            const fallbackStream = await origGetUserMedia(constraints);
+            initCameraTrack(fallbackStream);
+            return fallbackStream;
+          }
+        }
+        return origGetUserMedia(constraints);
+      };
+    }
+
+    function initCameraTrack(stream) {
+      const track = stream.getVideoTracks()[0];
+      if (!track) return;
+      cameraTrack = track;
+
+      // Apply continuous autofocus if supported on device
+      try {
+        const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+        if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+          track.applyConstraints({
+            advanced: [{ focusMode: 'continuous' }]
+          }).catch(() => {});
+        }
+      } catch (e) {}
+    }
+  </script>
 </head>
 <body>
 
@@ -287,7 +359,7 @@
   <div class="splash-screen" id="splashScreen">
     <div class="spinner"></div>
     <h2 class="splash-title">Initializing WebAR</h2>
-    <p class="splash-desc">Requesting camera access and loading tracking features...</p>
+    <p class="splash-desc">Locking 60 FPS camera feed and initializing tracker...</p>
 
     <div class="error-modal" id="missingTargetModal">
       <h3>Target File Notice</h3>
@@ -296,6 +368,9 @@
     </div>
   </div>
 
+  <!-- Tap Focus Indicator -->
+  <div class="focus-ring" id="focusRing"></div>
+
   <!-- UI Overlay -->
   <div class="ar-ui-overlay">
     <div class="top-bar">
@@ -303,39 +378,43 @@
         <span class="pulse-dot" id="statusDot"></span>
         <span id="statusLabel">AR Scanning Active</span>
       </div>
-      <button class="info-btn" onclick="alert('Point camera at Figure 1 or Figure 2 on the conference poster.')">?</button>
+      <button class="info-btn" onclick="alert('Point camera at the figures on the conference poster. Tap screen anywhere to autofocus.')">?</button>
     </div>
 
+    <!-- Scan Reticle -->
     <div class="scan-guide" id="scanGuide">
       <div class="corner corner-tl"></div>
       <div class="corner corner-tr"></div>
       <div class="corner corner-bl"></div>
       <div class="corner corner-br"></div>
       <div class="scan-line"></div>
-      <div class="guide-text">Aim camera at Figure 1 or 2</div>
+      <div class="guide-text">Align figure inside frame</div>
     </div>
 
+    <!-- Bottom Controls & FPS Meter -->
     <div class="bottom-bar">
-      <span class="ui-chip">MindAR Multi-Track (2 Targets)</span>
-      <span class="ui-chip">Hardware Accelerated</span>
+      <div class="ui-chip">Tap screen to focus</div>
+      <div class="ui-chip" id="fpsBadge">-- FPS</div>
     </div>
   </div>
 
   <!--
-    Optimizations applied to a-scene:
-    1. uiLoading/uiScanning/uiError: "no" disables redundant MindAR default DOM creation.
-    2. renderer="antialias: false; alpha: true; precision: mediump; powerPreference: high-performance;" disables expensive MSAA on mobile.
-    3. filterMinCF & filterBeta tuned for responsiveness vs jitter.
+    MINDAR OPTIMIZATIONS:
+    - filterMinCF: 0.001 (high stability at rest)
+    - filterBeta: 1000 (CRITICAL: removes the lag and drag from the previous value of 10)
+    - missTolerance: 10 (prevents choppy lost/found flashing on slight motion blur)
+    - warmupTolerance: 2 (faster target acquisition)
+    - maxTrack: 2
   -->
   <a-scene
     id="arScene"
-    mindar-image="imageTargetSrc: ./assets/targets.mind; maxTrack: 2; filterMinCF: 0.001; filterBeta: 10; warmupTolerance: 3; missTolerance: 5; uiLoading: no; uiScanning: no; uiError: no;"
-    renderer="antialias: false; alpha: true; precision: mediump; powerPreference: high-performance;"
+    mindar-image="imageTargetSrc: ./assets/targets.mind; maxTrack: 2; filterMinCF: 0.001; filterBeta: 1000; warmupTolerance: 2; missTolerance: 10; uiLoading: no; uiScanning: no; uiError: no;"
+    renderer="antialias: false; alpha: true; precision: mediump; powerPreference: high-performance; stencil: false; depth: true;"
     vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false">
+    device-orientation-permission-ui="enabled: false"
+    loading-screen="enabled: false">
 
-    <!-- Use preload="metadata" to prevent memory exhaustion and network stalls -->
-    <a-assets timeout="8000">
+    <a-assets timeout="10000">
       <video
         id="video1"
         src="./assets/video1.mp4"
@@ -359,9 +438,9 @@
       </video>
     </a-assets>
 
-    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+    <a-camera position="0 0 0" look-controls="enabled: false" wasd-controls-enabled="false"></a-camera>
 
-    <!-- Initially visible="false" so Three.js ignores them until tracked -->
+    <!-- Entities remain invisible until detected so Three.js doesn't waste GPU cycles -->
     <a-entity id="target0" mindar-image-target="targetIndex: 0" visible="false">
       <a-video
         id="arVideo1"
@@ -378,7 +457,7 @@
         id="arVideo2"
         src="#video2"
         width="1"
-        height="0.5625"
+        height="0.8"
         position="0 0 0"
         rotation="0 0 0">
       </a-video>
@@ -391,6 +470,8 @@
     const statusDot = document.querySelector('#statusDot');
     const statusLabel = document.querySelector('#statusLabel');
     const scanGuide = document.querySelector('#scanGuide');
+    const focusRing = document.querySelector('#focusRing');
+    const fpsBadge = document.querySelector('#fpsBadge');
     const target0 = document.querySelector('#target0');
     const target1 = document.querySelector('#target1');
     const video1 = document.querySelector('#video1');
@@ -398,18 +479,68 @@
 
     let activeTargetsCount = 0;
 
-    // --- CRITICAL PERFORMANCE OPTIMIZATION: DPR CLAMPING ---
-    // Clamping device pixel ratio to max 1.5 prevents mobile GPUs from melting on high-DPI screens.
+    // --- 2. GPU PIXEL RATIO CLAMPING ---
+    // Clamping to 1.2 provides crisp visuals while cutting 60% of GPU fragment load on Retina displays.
     scene.addEventListener('loaded', () => {
       const renderer = scene.renderer;
       if (renderer) {
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.2));
       }
     });
 
-    function triggerHaptic() {
+    // --- 3. REAL-TIME FPS MONITOR ---
+    let frameTimes = 0;
+    let lastFpsUpdate = performance.now();
+    function trackFPS(now) {
+      frameTimes++;
+      if (now - lastFpsUpdate >= 1000) {
+        const currentFps = Math.round((frameTimes * 1000) / (now - lastFpsUpdate));
+        fpsBadge.innerText = `${currentFps} FPS`;
+        frameTimes = 0;
+        lastFpsUpdate = now;
+      }
+      requestAnimationFrame(trackFPS);
+    }
+    requestAnimationFrame(trackFPS);
+
+    // --- 4. TAP-TO-AUTOFOCUS CONTROLLER ---
+    async function triggerAutofocus(e) {
+      const x = e.clientX || (e.touches && e.touches[0].clientX);
+      const y = e.clientY || (e.touches && e.touches[0].clientY);
+
+      if (x !== undefined && y !== undefined) {
+        focusRing.style.left = `${x}px`;
+        focusRing.style.top = `${y}px`;
+        focusRing.classList.add('active');
+        setTimeout(() => focusRing.classList.remove('active'), 500);
+      }
+
+      triggerHaptic(20);
+
+      if (!cameraTrack) return;
+      try {
+        const capabilities = cameraTrack.getCapabilities ? cameraTrack.getCapabilities() : {};
+        const constraints = { advanced: [] };
+
+        if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+          constraints.advanced.push({ focusMode: 'continuous' });
+        }
+        if (capabilities.pointsOfInterest && x && y) {
+          constraints.advanced.push({
+            pointsOfInterest: [{ x: x / window.innerWidth, y: y / window.innerHeight }]
+          });
+        }
+        if (constraints.advanced.length > 0) {
+          await cameraTrack.applyConstraints(constraints);
+        }
+      } catch (err) {}
+    }
+
+    window.addEventListener('click', triggerAutofocus);
+
+    function triggerHaptic(duration = 30) {
       if (navigator.vibrate) {
-        try { navigator.vibrate(30); } catch (e) {}
+        try { navigator.vibrate(duration); } catch (e) {}
       }
     }
 
@@ -426,20 +557,20 @@
 
     scene.addEventListener('arReady', () => {
       splashScreen.classList.add('fade-out');
-      setTimeout(() => { splashScreen.style.display = 'none'; }, 400);
+      setTimeout(() => { splashScreen.style.display = 'none'; }, 300);
     });
 
     scene.addEventListener('arError', () => {
       const modal = document.querySelector('#missingTargetModal');
       const msg = document.querySelector('#targetErrorMessage');
       modal.style.display = 'block';
-      msg.innerHTML = "Camera permission denied or <code>assets/targets.mind</code> missing.<br>Verify assets and reload.";
+      msg.innerHTML = "Camera access denied or <code>assets/targets.mind</code> missing.<br>Please allow camera permissions and reload.";
     });
 
     video1.muted = true;
     video2.muted = true;
 
-    // Safari iOS audio/video resume safety
+    // Safari iOS autoplay touch unlock
     window.addEventListener('touchstart', () => {
       if (video1.paused && activeTargetsCount === 0) video1.load();
       if (video2.paused && activeTargetsCount === 0) video2.load();
@@ -458,7 +589,7 @@
     });
 
     target0.addEventListener('targetLost', () => {
-      target0.setAttribute('visible', 'false'); // Stops Three.js from uploading and rendering
+      target0.setAttribute('visible', 'false');
       activeTargetsCount = Math.max(0, activeTargetsCount - 1);
       video1.pause();
       updateUI();
@@ -477,7 +608,7 @@
     });
 
     target1.addEventListener('targetLost', () => {
-      target1.setAttribute('visible', 'false'); // Stops Three.js from uploading and rendering
+      target1.setAttribute('visible', 'false');
       activeTargetsCount = Math.max(0, activeTargetsCount - 1);
       video2.pause();
       updateUI();
