@@ -292,6 +292,136 @@
       text-decoration: none;
       display: inline-block;
     }
+
+    /* --- HORIZONTAL ORIENTATION PROMPT OVERLAY --- */
+    .orientation-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(9, 13, 22, 0.88);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 90;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      opacity: 0;
+      pointer-events: none;
+      visibility: hidden;
+      transition: opacity 0.35s ease, visibility 0.35s ease;
+    }
+    .orientation-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+      visibility: visible;
+    }
+    .orientation-card {
+      background: rgba(15, 23, 42, 0.94);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 20px;
+      padding: 2.2rem 1.75rem;
+      max-width: 330px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 25px rgba(56, 189, 248, 0.12);
+      transform: translateY(12px) scale(0.96);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .orientation-overlay.active .orientation-card {
+      transform: translateY(0) scale(1);
+    }
+
+    /* Rotating Phone Animation */
+    .phone-anim-box {
+      width: 70px;
+      height: 70px;
+      margin: 0 auto 1.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .phone-mockup {
+      width: 32px;
+      height: 56px;
+      border: 2.5px solid #38bdf8;
+      border-radius: 7px;
+      position: relative;
+      background: rgba(56, 189, 248, 0.08);
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.35);
+      animation: rotatePhone 2.8s ease-in-out infinite;
+      transform-origin: center center;
+    }
+    .phone-mockup::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 8px;
+      height: 2px;
+      background: #38bdf8;
+      border-radius: 2px;
+    }
+    .phone-mockup::before {
+      content: '';
+      position: absolute;
+      top: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 6px;
+      height: 1.5px;
+      background: rgba(56, 189, 248, 0.6);
+      border-radius: 2px;
+    }
+    @keyframes rotatePhone {
+      0%, 20% {
+        transform: rotate(0deg) scale(1);
+      }
+      50%, 75% {
+        transform: rotate(-90deg) scale(1.08);
+      }
+      95%, 100% {
+        transform: rotate(0deg) scale(1);
+      }
+    }
+
+    .orientation-title {
+      font-size: 1.22rem;
+      font-weight: 700;
+      color: #f8fafc;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .orientation-text {
+      color: #94a3b8;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      margin-bottom: 1.5rem;
+    }
+    .orientation-text strong {
+      color: #38bdf8;
+      font-weight: 600;
+    }
+    .orientation-btn {
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      color: #ffffff;
+      border: none;
+      width: 100%;
+      padding: 0.75rem 1.25rem;
+      border-radius: 10px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    .orientation-btn:active {
+      transform: scale(0.97);
+    }
   </style>
 
   <script>
@@ -305,7 +435,6 @@
         if (constraints && constraints.video) {
           const videoConstraints = typeof constraints.video === 'object' ? constraints.video : {};
 
-          // Request 60 FPS hardware capture at 720p (sweet spot for TensorFlow.js image tracking)
           const enhancedConstraints = {
             ...constraints,
             video: {
@@ -341,7 +470,6 @@
       if (!track) return;
       cameraTrack = track;
 
-      // Apply continuous autofocus if supported on device
       try {
         const capabilities = track.getCapabilities ? track.getCapabilities() : {};
         if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
@@ -365,6 +493,20 @@
       <h3>Target File Notice</h3>
       <p id="targetErrorMessage">Unable to load targets or access camera.</p>
       <a href="compiler.html" class="modal-btn">Open Compiler</a>
+    </div>
+  </div>
+
+  <!-- Horizontal Orientation Encouragement Modal -->
+  <div class="orientation-overlay" id="orientationOverlay">
+    <div class="orientation-card">
+      <div class="phone-anim-box">
+        <div class="phone-mockup"></div>
+      </div>
+      <h3 class="orientation-title">Hold Phone Horizontally</h3>
+      <p class="orientation-text">
+        For the best AR alignment and wide view of poster figures, please rotate your device to <strong>landscape mode</strong>.
+      </p>
+      <button class="orientation-btn" id="dismissOrientationBtn">Continue</button>
     </div>
   </div>
 
@@ -398,17 +540,9 @@
     </div>
   </div>
 
-  <!--
-    MINDAR OPTIMIZATIONS:
-    - filterMinCF: 0.001 (high stability at rest)
-    - filterBeta: 1000 (CRITICAL: removes the lag and drag from the previous value of 10)
-    - missTolerance: 10 (prevents choppy lost/found flashing on slight motion blur)
-    - warmupTolerance: 2 (faster target acquisition)
-    - maxTrack: 2
-  -->
   <a-scene
     id="arScene"
-    mindar-image="imageTargetSrc: ./assets/targets.mind; maxTrack: 2; filterMinCF: 0.0001; filterBeta: 1000; warmupTolerance: 2; missTolerance: 10; uiLoading: no; uiScanning: no; uiError: no;"
+    mindar-image="imageTargetSrc: ./assets/targets.mind; maxTrack: 2; filterMinCF: 0.001; filterBeta: 1000; warmupTolerance: 2; missTolerance: 10; uiLoading: no; uiScanning: no; uiError: no;"
     renderer="antialias: false; alpha: true; precision: mediump; powerPreference: high-performance; stencil: false; depth: true;"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
@@ -440,7 +574,7 @@
 
     <a-camera position="0 0 0" look-controls="enabled: false" wasd-controls-enabled="false"></a-camera>
 
-    <!-- Entities remain invisible until detected so Three.js doesn't waste GPU cycles -->
+    <!-- Target 0 -->
     <a-entity id="target0" mindar-image-target="targetIndex: 0" visible="false">
       <a-video
         id="arVideo1"
@@ -452,6 +586,7 @@
       </a-video>
     </a-entity>
 
+    <!-- Target 1 -->
     <a-entity id="target1" mindar-image-target="targetIndex: 1" visible="false">
       <a-video
         id="arVideo2"
@@ -477,10 +612,45 @@
     const video1 = document.querySelector('#video1');
     const video2 = document.querySelector('#video2');
 
+    const orientationOverlay = document.querySelector('#orientationOverlay');
+    const dismissOrientationBtn = document.querySelector('#dismissOrientationBtn');
+
     let activeTargetsCount = 0;
+    let orientationPromptDismissed = false;
+
+    // --- ORIENTATION CHECK LOGIC ---
+    function isPortrait() {
+      if (window.matchMedia && window.matchMedia("(orientation: portrait)").matches) {
+        return true;
+      }
+      return window.innerHeight > window.innerWidth;
+    }
+
+    function evaluateOrientationPrompt() {
+      if (orientationPromptDismissed) return;
+
+      // Show prompt if holding vertically; automatically dismiss if user rotates horizontally
+      if (isPortrait()) {
+        orientationOverlay.classList.add('active');
+      } else {
+        orientationOverlay.classList.remove('active');
+      }
+    }
+
+    function dismissOrientationPrompt() {
+      orientationPromptDismissed = true;
+      orientationOverlay.classList.remove('active');
+
+      // Primes videos to comply with Safari iOS touch requirements
+      if (video1.paused && activeTargetsCount === 0) video1.load();
+      if (video2.paused && activeTargetsCount === 0) video2.load();
+    }
+
+    dismissOrientationBtn.addEventListener('click', dismissOrientationPrompt);
+    window.addEventListener('resize', evaluateOrientationPrompt);
+    window.addEventListener('orientationchange', evaluateOrientationPrompt);
 
     // --- 2. GPU PIXEL RATIO CLAMPING ---
-    // Clamping to 1.2 provides crisp visuals while cutting 60% of GPU fragment load on Retina displays.
     scene.addEventListener('loaded', () => {
       const renderer = scene.renderer;
       if (renderer) {
@@ -557,7 +727,10 @@
 
     scene.addEventListener('arReady', () => {
       splashScreen.classList.add('fade-out');
-      setTimeout(() => { splashScreen.style.display = 'none'; }, 300);
+      setTimeout(() => {
+        splashScreen.style.display = 'none';
+        evaluateOrientationPrompt();
+      }, 300);
     });
 
     scene.addEventListener('arError', () => {
