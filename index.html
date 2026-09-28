@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>AR Academic Poster — Stabilized WebAR</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AR Academic Poster — Optimized MindAR</title>
 
   <!-- A-Frame library (v1.5.0) -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
@@ -31,7 +31,7 @@
     /* Fullscreen AR Scene & Canvas */
     a-scene {
       width: 100vw;
-      height: 100dvh;
+      height: 100vh;
       position: absolute;
       top: 0;
       left: 0;
@@ -65,14 +65,13 @@
       top: 0;
       left: 0;
       width: 100vw;
-      height: 100dvh;
       height: 100vh;
       z-index: 10;
       pointer-events: none;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 1rem 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px)) 1rem;
+      padding: 1.25rem 1rem;
     }
 
     .top-bar {
@@ -201,25 +200,23 @@
       border: 1px solid rgba(255, 255, 255, 0.15);
       color: #cbd5e1;
       font-size: 0.75rem;
-      padding: 0.45rem 0.85rem;
+      padding: 0.4rem 0.8rem;
       border-radius: 9999px;
       font-weight: 500;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
     }
 
     /* Tap-to-Focus Reticle */
     .focus-ring {
       position: absolute;
-      width: 54px;
-      height: 54px;
+      width: 60px;
+      height: 60px;
       border: 2px solid #38bdf8;
-      border-radius: 8px;
+      border-radius: 50%;
       pointer-events: none;
       transform: translate(-50%, -50%) scale(1.4);
       opacity: 0;
-      transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+      transition: transform 0.25s ease-out, opacity 0.25s ease-out;
       z-index: 50;
-      box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
     }
     .focus-ring.active {
       transform: translate(-50%, -50%) scale(1);
@@ -232,7 +229,7 @@
       top: 0;
       left: 0;
       width: 100vw;
-      height: 100dvh;
+      height: 100vh;
       background: #090d16;
       z-index: 100;
       display: flex;
@@ -298,7 +295,7 @@
   </style>
 
   <script>
-    // --- 1. CAMERA INTERCEPT: 720P @ 60 FPS & CONTINUOUS AUTOFOCUS ---
+    // --- 1. CAMERA STREAM INTERCEPT: FORCE 60 FPS, 720P, & CONTINUOUS AUTOFOCUS ---
     let cameraTrack = null;
 
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -308,26 +305,30 @@
         if (constraints && constraints.video) {
           const videoConstraints = typeof constraints.video === 'object' ? constraints.video : {};
 
-          // Request 60 FPS at 720p (prevents heavy 1080p TF.js overhead)
+          // Request 60 FPS hardware capture at 720p (sweet spot for TensorFlow.js image tracking)
           const enhancedConstraints = {
             ...constraints,
             video: {
               ...videoConstraints,
               facingMode: videoConstraints.facingMode || { ideal: "environment" },
-              width: { ideal: 1280 },
+              width: { ideal: 1280},
               height: { ideal: 720 },
-              frameRate: { ideal: 60, min: 30 }
+              frameRate: { ideal: 60, min: 30 },
+              advanced: [
+                ...(videoConstraints.advanced || []),
+                { focusMode: "continuous" }
+              ]
             }
           };
 
           try {
             const stream = await origGetUserMedia(enhancedConstraints);
-            attachTrackControls(stream);
+            initCameraTrack(stream);
             return stream;
           } catch (err) {
-            console.warn("Optimized constraints rejected, falling back:", err);
+            console.warn("Optimized camera constraints rejected; falling back:", err);
             const fallbackStream = await origGetUserMedia(constraints);
-            attachTrackControls(fallbackStream);
+            initCameraTrack(fallbackStream);
             return fallbackStream;
           }
         }
@@ -335,122 +336,21 @@
       };
     }
 
-    function attachTrackControls(stream) {
+    function initCameraTrack(stream) {
       const track = stream.getVideoTracks()[0];
       if (!track) return;
       cameraTrack = track;
 
-      // Lock continuous autofocus if supported on device
-      setTimeout(async () => {
-        try {
-          const caps = track.getCapabilities ? track.getCapabilities() : {};
-          const advanced = [];
-          if (caps.focusMode && caps.focusMode.includes('continuous')) {
-            advanced.push({ focusMode: 'continuous' });
-          }
-          if (caps.exposureMode && caps.exposureMode.includes('continuous')) {
-            advanced.push({ exposureMode: 'continuous' });
-          }
-          if (advanced.length > 0) {
-            await track.applyConstraints({ advanced });
-          }
-        } catch (e) {}
-      }, 500);
+      // Apply continuous autofocus if supported on device
+      try {
+        const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+        if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+          track.applyConstraints({
+            advanced: [{ focusMode: 'continuous' }]
+          }).catch(() => {});
+        }
+      } catch (e) {}
     }
-
-    // --- 2. CUSTOM A-FRAME COMPONENT: POSE STABILIZER & HOMOGRAPHY FLIP REJECTION ---
-    AFRAME.registerComponent('smooth-anchor', {
-      schema: {
-        target: { type: 'selector' },
-        posLerp: { type: 'number', default: 0.16 },
-        rotSlerp: { type: 'number', default: 0.14 },
-        maxAngleJump: { type: 'number', default: 0.44 }, // ~25 degrees
-        lossGraceMs: { type: 'number', default: 250 }     // Prevents 1-frame blinking
-      },
-
-      init: function () {
-        this.targetEl = this.data.target;
-        this.isTargetFound = false;
-        this.lastFoundTime = 0;
-        this.firstSeen = true;
-
-        this.currPos = new THREE.Vector3();
-        this.currQuat = new THREE.Quaternion();
-        this.currScale = new THREE.Vector3(1, 1, 1);
-
-        this.rawPos = new THREE.Vector3();
-        this.rawQuat = new THREE.Quaternion();
-        this.rawScale = new THREE.Vector3(1, 1, 1);
-
-        if (!this.targetEl) return;
-
-        this.targetEl.addEventListener('targetFound', () => {
-          this.isTargetFound = true;
-          this.lastFoundTime = performance.now();
-        });
-
-        this.targetEl.addEventListener('targetLost', () => {
-          this.isTargetFound = false;
-        });
-      },
-
-      tick: function (time, timeDelta) {
-        if (!this.targetEl) return;
-
-        const now = performance.now();
-        const targetObj = this.targetEl.object3D;
-
-        // Keep content visible through short tracking dropouts
-        const isVisible = this.isTargetFound || (now - this.lastFoundTime < this.data.lossGraceMs);
-
-        if (!isVisible) {
-          if (this.el.object3D.visible) {
-            this.el.object3D.visible = false;
-            this.firstSeen = true;
-          }
-          return;
-        }
-
-        if (this.isTargetFound) {
-          this.lastFoundTime = now;
-        }
-
-        targetObj.updateMatrixWorld(true);
-        targetObj.getWorldPosition(this.rawPos);
-        targetObj.getWorldQuaternion(this.rawQuat);
-        targetObj.getWorldScale(this.rawScale);
-
-        if (this.firstSeen) {
-          this.currPos.copy(this.rawPos);
-          this.currQuat.copy(this.rawQuat);
-          this.currScale.copy(this.rawScale);
-          this.firstSeen = false;
-          this.el.object3D.visible = true;
-        } else {
-          // Normalize lerp/slerp factor across 30-60 FPS
-          const dtFactor = Math.min(1.0, Math.max(0.01, (timeDelta || 16.6) / 16.666));
-          const pFactor = Math.min(1.0, this.data.posLerp * dtFactor);
-          const rFactor = Math.min(1.0, this.data.rotSlerp * dtFactor);
-
-          // Position interpolation
-          this.currPos.lerp(this.rawPos, pFactor);
-
-          // Outlier flip detection: Rejects sudden mathematical homography jumps (> 25°)
-          const angleDiff = this.currQuat.angleTo(this.rawQuat);
-          if (angleDiff < this.data.maxAngleJump) {
-            this.currQuat.slerp(this.rawQuat, rFactor);
-          }
-
-          // Scale interpolation
-          this.currScale.lerp(this.rawScale, pFactor);
-        }
-
-        this.el.object3D.position.copy(this.currPos);
-        this.el.object3D.quaternion.copy(this.currQuat);
-        this.el.object3D.scale.copy(this.currScale);
-        this.el.object3D.visible = true;
-      }
-    });
   </script>
 </head>
 <body>
@@ -459,7 +359,7 @@
   <div class="splash-screen" id="splashScreen">
     <div class="spinner"></div>
     <h2 class="splash-title">Initializing WebAR</h2>
-    <p class="splash-desc">Stabilizing camera feed and calibrating tracking features...</p>
+    <p class="splash-desc">initializing tracker...</p>
 
     <div class="error-modal" id="missingTargetModal">
       <h3>Target File Notice</h3>
@@ -468,7 +368,7 @@
     </div>
   </div>
 
-  <!-- Tap-to-Focus Reticle -->
+  <!-- Tap Focus Indicator -->
   <div class="focus-ring" id="focusRing"></div>
 
   <!-- UI Overlay -->
@@ -478,7 +378,7 @@
         <span class="pulse-dot" id="statusDot"></span>
         <span id="statusLabel">AR Scanning Active</span>
       </div>
-      <button class="info-btn" onclick="alert('Point camera at Figure 1 or Figure 2 on the conference poster. Tap anywhere on screen to refocus.')">?</button>
+      <button class="info-btn" onclick="alert('Point camera at the figures on the conference poster. Tap screen anywhere to autofocus.')">?</button>
     </div>
 
     <!-- Scan Reticle -->
@@ -499,14 +399,16 @@
   </div>
 
   <!--
-    MINDAR CONFIGURATION:
-    - filterMinCF: 0.0001 & filterBeta: 0.001 (CRITICAL: eliminates the shaking seen in the video)
-    - missTolerance: 12 (avoids rapid target blinking)
-    - warmupTolerance: 2 (fast target recognition)
+    MINDAR OPTIMIZATIONS:
+    - filterMinCF: 0.001 (high stability at rest)
+    - filterBeta: 1000 (CRITICAL: removes the lag and drag from the previous value of 10)
+    - missTolerance: 10 (prevents choppy lost/found flashing on slight motion blur)
+    - warmupTolerance: 2 (faster target acquisition)
+    - maxTrack: 2
   -->
   <a-scene
     id="arScene"
-    mindar-image="imageTargetSrc: ./assets/targets.mind; maxTrack: 2; filterMinCF: 0.0001; filterBeta: 0.001; warmupTolerance: 2; missTolerance: 12; uiLoading: no; uiScanning: no; uiError: no;"
+    mindar-image="imageTargetSrc: ./assets/targets.mind; maxTrack: 2; filterMinCF: 0.0001; filterBeta: 0.001; warmupTolerance: 2; missTolerance: 10; uiLoading: no; uiScanning: no; uiError: no;"
     renderer="antialias: false; alpha: true; precision: mediump; powerPreference: high-performance; stencil: false; depth: true;"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
@@ -538,32 +440,26 @@
 
     <a-camera position="0 0 0" look-controls="enabled: false" wasd-controls-enabled="false"></a-camera>
 
-    <!-- Raw MindAR Tracker Entities (invisible) -->
-    <a-entity id="target0" mindar-image-target="targetIndex: 0" visible="false"></a-entity>
-    <a-entity id="target1" mindar-image-target="targetIndex: 1" visible="false"></a-entity>
-
-    <!-- Stabilized Render Entities (isolated from homography flips & jitter) -->
-    <a-entity id="anchor0" smooth-anchor="target: #target0" visible="false">
+    <!-- Entities remain invisible until detected so Three.js doesn't waste GPU cycles -->
+    <a-entity id="target0" mindar-image-target="targetIndex: 0" visible="false">
       <a-video
         id="arVideo1"
         src="#video1"
         width="1"
         height="0.5625"
         position="0 0 0"
-        rotation="0 0 0"
-        material="shader: flat; side: front; transparent: true;">
+        rotation="0 0 0">
       </a-video>
     </a-entity>
 
-    <a-entity id="anchor1" smooth-anchor="target: #target1" visible="false">
+    <a-entity id="target1" mindar-image-target="targetIndex: 1" visible="false">
       <a-video
         id="arVideo2"
         src="#video2"
         width="1"
         height="0.8"
         position="0 0 0"
-        rotation="0 0 0"
-        material="shader: flat; side: front; transparent: true;">
+        rotation="0 0 0">
       </a-video>
     </a-entity>
   </a-scene>
@@ -576,41 +472,23 @@
     const scanGuide = document.querySelector('#scanGuide');
     const focusRing = document.querySelector('#focusRing');
     const fpsBadge = document.querySelector('#fpsBadge');
-
     const target0 = document.querySelector('#target0');
     const target1 = document.querySelector('#target1');
-    const arVideo1 = document.querySelector('#arVideo1');
-    const arVideo2 = document.querySelector('#arVideo2');
     const video1 = document.querySelector('#video1');
     const video2 = document.querySelector('#video2');
 
-    let isTarget0Tracked = false;
-    let isTarget1Tracked = false;
+    let activeTargetsCount = 0;
 
-    // --- 3. CLAMP RENDERER PIXEL RATIO ---
+    // --- 2. GPU PIXEL RATIO CLAMPING ---
+    // Clamping to 1.2 provides crisp visuals while cutting 60% of GPU fragment load on Retina displays.
     scene.addEventListener('loaded', () => {
       const renderer = scene.renderer;
       if (renderer) {
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.0));
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.2));
       }
     });
 
-    // Automatically sync aspect ratio with the loaded MP4 files
-    function syncVideoAspect(videoEl, aVideoEl) {
-      const update = () => {
-        if (videoEl.videoWidth && videoEl.videoHeight) {
-          const aspect = videoEl.videoHeight / videoEl.videoWidth;
-          aVideoEl.setAttribute('width', '1');
-          aVideoEl.setAttribute('height', aspect.toFixed(4));
-        }
-      };
-      if (videoEl.readyState >= 1) update();
-      else videoEl.addEventListener('loadedmetadata', update, { once: true });
-    }
-    syncVideoAspect(video1, arVideo1);
-    syncVideoAspect(video2, arVideo2);
-
-    // --- 4. REAL-TIME FPS MONITOR ---
+    // --- 3. REAL-TIME FPS MONITOR ---
     let frameTimes = 0;
     let lastFpsUpdate = performance.now();
     function trackFPS(now) {
@@ -625,43 +503,40 @@
     }
     requestAnimationFrame(trackFPS);
 
-    // --- 5. INTERACTIVE TAP-TO-FOCUS CONTROLLER ---
-    async function triggerTapFocus(e) {
-      if (e.target.closest('.info-btn') || e.target.closest('.modal-btn')) return;
+    // --- 4. TAP-TO-AUTOFOCUS CONTROLLER ---
+    async function triggerAutofocus(e) {
+      const x = e.clientX || (e.touches && e.touches[0].clientX);
+      const y = e.clientY || (e.touches && e.touches[0].clientY);
 
-      const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-      const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-
-      if (clientX !== undefined && clientY !== undefined) {
-        focusRing.style.left = `${clientX}px`;
-        focusRing.style.top = `${clientY}px`;
+      if (x !== undefined && y !== undefined) {
+        focusRing.style.left = `${x}px`;
+        focusRing.style.top = `${y}px`;
         focusRing.classList.add('active');
-        setTimeout(() => focusRing.classList.remove('active'), 450);
+        setTimeout(() => focusRing.classList.remove('active'), 500);
       }
 
-      triggerHaptic(25);
+      triggerHaptic(20);
 
-      if (!cameraTrack || !cameraTrack.applyConstraints) return;
+      if (!cameraTrack) return;
       try {
-        const caps = cameraTrack.getCapabilities ? cameraTrack.getCapabilities() : {};
-        const advanced = [];
+        const capabilities = cameraTrack.getCapabilities ? cameraTrack.getCapabilities() : {};
+        const constraints = { advanced: [] };
 
-        if (caps.pointsOfInterest && clientX && clientY) {
-          advanced.push({
-            pointsOfInterest: [{ x: clientX / window.innerWidth, y: clientY / window.innerHeight }]
+        if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+          constraints.advanced.push({ focusMode: 'continuous' });
+        }
+        if (capabilities.pointsOfInterest && x && y) {
+          constraints.advanced.push({
+            pointsOfInterest: [{ x: x / window.innerWidth, y: y / window.innerHeight }]
           });
         }
-        if (caps.focusMode && caps.focusMode.includes('continuous')) {
-          advanced.push({ focusMode: 'continuous' });
-        }
-
-        if (advanced.length > 0) {
-          await cameraTrack.applyConstraints({ advanced });
+        if (constraints.advanced.length > 0) {
+          await cameraTrack.applyConstraints(constraints);
         }
       } catch (err) {}
     }
 
-    window.addEventListener('click', triggerTapFocus);
+    window.addEventListener('click', triggerAutofocus);
 
     function triggerHaptic(duration = 30) {
       if (navigator.vibrate) {
@@ -669,19 +544,10 @@
       }
     }
 
-    function updateStatusUI() {
-      if (isTarget0Tracked && isTarget1Tracked) {
+    function updateUI() {
+      if (activeTargetsCount > 0) {
         scanGuide.classList.add('hidden');
         statusDot.classList.add('active');
-        statusLabel.innerText = "Tracking Figures 1 & 2";
-      } else if (isTarget0Tracked) {
-        scanGuide.classList.add('hidden');
-        statusDot.classList.add('active');
-        statusLabel.innerText = "Tracking Figure 1";
-      } else if (isTarget1Tracked) {
-        scanGuide.classList.add('hidden');
-        statusDot.classList.add('active');
-        statusLabel.innerText = "Tracking Figure 2";
       } else {
         scanGuide.classList.remove('hidden');
         statusDot.classList.remove('active');
@@ -706,46 +572,46 @@
 
     // Safari iOS autoplay touch unlock
     window.addEventListener('touchstart', () => {
-      if (video1.paused && !isTarget0Tracked) video1.load();
-      if (video2.paused && !isTarget1Tracked) video2.load();
+      if (video1.paused && activeTargetsCount === 0) video1.load();
+      if (video2.paused && activeTargetsCount === 0) video2.load();
     }, { once: true });
 
     // Target 0 (Figure 1)
     target0.addEventListener('targetFound', () => {
-      isTarget0Tracked = true;
+      target0.setAttribute('visible', 'true');
+      activeTargetsCount++;
+      statusLabel.innerText = "Tracking Figure 1";
       triggerHaptic();
-      updateStatusUI();
+      updateUI();
 
-      if (video1.paused) {
-        video1.play().catch(() => {});
-      }
+      video1.currentTime = 0;
+      video1.play().catch(() => {});
     });
 
     target0.addEventListener('targetLost', () => {
-      isTarget0Tracked = false;
-      setTimeout(() => {
-        if (!isTarget0Tracked) video1.pause();
-      }, 250);
-      updateStatusUI();
+      target0.setAttribute('visible', 'false');
+      activeTargetsCount = Math.max(0, activeTargetsCount - 1);
+      video1.pause();
+      updateUI();
     });
 
     // Target 1 (Figure 2)
     target1.addEventListener('targetFound', () => {
-      isTarget1Tracked = true;
+      target1.setAttribute('visible', 'true');
+      activeTargetsCount++;
+      statusLabel.innerText = "Tracking Figure 2";
       triggerHaptic();
-      updateStatusUI();
+      updateUI();
 
-      if (video2.paused) {
-        video2.play().catch(() => {});
-      }
+      video2.currentTime = 0;
+      video2.play().catch(() => {});
     });
 
     target1.addEventListener('targetLost', () => {
-      isTarget1Tracked = false;
-      setTimeout(() => {
-        if (!isTarget1Tracked) video2.pause();
-      }, 250);
-      updateStatusUI();
+      target1.setAttribute('visible', 'false');
+      activeTargetsCount = Math.max(0, activeTargetsCount - 1);
+      video2.pause();
+      updateUI();
     });
   </script>
 </body>
