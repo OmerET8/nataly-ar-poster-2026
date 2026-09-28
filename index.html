@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>AR Academic Poster — Optimized MindAR</title>
 
   <!-- A-Frame library (v1.5.0) -->
@@ -21,6 +21,7 @@
     body, html {
       width: 100%;
       height: 100%;
+      height: -webkit-fill-available;
       margin: 0;
       padding: 0;
       overflow: hidden;
@@ -30,8 +31,8 @@
 
     /* Fullscreen AR Scene & Canvas */
     a-scene {
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
       position: absolute;
       top: 0;
       left: 0;
@@ -57,6 +58,7 @@
       object-fit: cover !important;
       z-index: 1 !important;
       display: block !important;
+      -webkit-transform: translate3d(0, 0, 0);
     }
 
     /* UI Overlay Layer */
@@ -64,14 +66,14 @@
       position: absolute;
       top: 0;
       left: 0;
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
       z-index: 10;
       pointer-events: none;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 1rem;
+      padding: env(safe-area-inset-top, 1rem) env(safe-area-inset-right, 1rem) env(safe-area-inset-bottom, 1rem) env(safe-area-inset-left, 1rem);
     }
 
     .top-bar {
@@ -160,8 +162,8 @@
     /* Scanning Reticle Frame */
     .scan-guide {
       align-self: center;
-      width: 70vw;
-      max-width: 320px;
+      width: 65vw;
+      max-width: 300px;
       aspect-ratio: 16 / 9;
       position: relative;
       display: flex;
@@ -178,8 +180,8 @@
 
     .corner {
       position: absolute;
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       border-color: #38bdf8;
       border-style: solid;
     }
@@ -201,16 +203,16 @@
     @keyframes scanAnim {
       0% { transform: translateY(0); opacity: 0.2; }
       50% { opacity: 0.9; }
-      100% { transform: translateY(160px); opacity: 0.2; }
+      100% { transform: translateY(140px); opacity: 0.2; }
     }
 
     .guide-text {
       background: rgba(15, 23, 42, 0.88);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 0.4rem 0.8rem;
+      padding: 0.35rem 0.75rem;
       border-radius: 20px;
       color: #e2e8f0;
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       font-weight: 500;
       text-align: center;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
@@ -237,8 +239,8 @@
     /* Tap-to-Focus Reticle */
     .focus-ring {
       position: absolute;
-      width: 54px;
-      height: 54px;
+      width: 50px;
+      height: 50px;
       border: 2px solid #38bdf8;
       border-radius: 50%;
       pointer-events: none;
@@ -252,16 +254,16 @@
       opacity: 1;
     }
 
-    /* Splash Screen (Deferred until landscape) */
+    /* Splash Screen (Active only in landscape) */
     .splash-screen {
       position: fixed;
       top: 0;
       left: 0;
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
       background: #090d16;
       z-index: 100;
-      display: none; /* Controlled dynamically */
+      display: none;
       flex-direction: column;
       align-items: center;
       justify-content: center;
@@ -274,26 +276,26 @@
       pointer-events: none;
     }
     .spinner {
-      width: 44px;
-      height: 44px;
+      width: 42px;
+      height: 42px;
       border: 3px solid rgba(56, 189, 248, 0.2);
       border-top-color: #38bdf8;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
       will-change: transform;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .splash-title {
-      font-size: 1.3rem;
+      font-size: 1.25rem;
       font-weight: 700;
       color: #f8fafc;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.4rem;
     }
     .splash-desc {
       color: #94a3b8;
-      font-size: 0.88rem;
+      font-size: 0.85rem;
       max-width: 320px;
       line-height: 1.4;
     }
@@ -309,15 +311,15 @@
       text-align: center;
       margin-top: 1.5rem;
     }
-    .error-modal h3 { color: #ef4444; font-size: 1.1rem; margin-bottom: 0.4rem; }
-    .error-modal p { font-size: 0.85rem; color: #cbd5e1; margin-bottom: 1rem; }
+    .error-modal h3 { color: #ef4444; font-size: 1.05rem; margin-bottom: 0.4rem; }
+    .error-modal p { font-size: 0.82rem; color: #cbd5e1; margin-bottom: 1rem; }
     .modal-btn {
       background: #2563eb;
       color: white;
       border: none;
-      padding: 0.55rem 1.1rem;
+      padding: 0.5rem 1rem;
       border-radius: 6px;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       text-decoration: none;
       display: inline-block;
     }
@@ -327,8 +329,8 @@
       position: fixed;
       top: 0;
       left: 0;
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
       background: #090d16;
       z-index: 150;
       display: flex;
@@ -349,8 +351,8 @@
       background: rgba(15, 23, 42, 0.95);
       border: 1px solid rgba(56, 189, 248, 0.25);
       border-radius: 20px;
-      padding: 2.2rem 1.7rem;
-      max-width: 340px;
+      padding: 2.2rem 1.6rem;
+      max-width: 330px;
       width: 100%;
       text-align: center;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
@@ -370,8 +372,8 @@
       justify-content: center;
     }
     .phone-mockup {
-      width: 30px;
-      height: 52px;
+      width: 28px;
+      height: 50px;
       border: 2.5px solid #38bdf8;
       border-radius: 7px;
       position: relative;
@@ -386,7 +388,7 @@
       bottom: 4px;
       left: 50%;
       transform: translateX(-50%);
-      width: 8px;
+      width: 7px;
       height: 2px;
       background: #38bdf8;
       border-radius: 2px;
@@ -398,16 +400,16 @@
     }
 
     .orientation-title {
-      font-size: 1.22rem;
+      font-size: 1.2rem;
       font-weight: 700;
       color: #f8fafc;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.45rem;
     }
     .orientation-text {
       color: #94a3b8;
-      font-size: 0.86rem;
+      font-size: 0.85rem;
       line-height: 1.45;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.4rem;
     }
     .orientation-text strong {
       color: #38bdf8;
@@ -418,9 +420,9 @@
       color: #ffffff;
       border: none;
       width: 100%;
-      padding: 0.8rem 1.25rem;
+      padding: 0.8rem 1.2rem;
       border-radius: 10px;
-      font-size: 0.92rem;
+      font-size: 0.9rem;
       font-weight: 600;
       cursor: pointer;
       box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
@@ -431,12 +433,23 @@
       transition: transform 0.15s;
     }
     .orientation-btn:active { transform: scale(0.97); }
+
+    .ios-note {
+      font-size: 0.74rem;
+      color: #64748b;
+      margin-top: 0.75rem;
+      line-height: 1.3;
+    }
   </style>
 
   <script>
-    // --- 1. CAMERA STREAM INTERCEPT (60 FPS, 720P, AUTOFOCUS) ---
+    // Detection for iOS/iPadOS Safari
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
     let cameraTrack = null;
 
+    // --- 1. SAFARI-SAFE CAMERA INTERCEPT ---
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       const origGetUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
 
@@ -444,6 +457,7 @@
         if (constraints && constraints.video) {
           const videoConstraints = typeof constraints.video === 'object' ? constraints.video : {};
 
+          // Notice: Safari iOS will throw OverconstrainedError if `min: 30` or `focusMode` in `advanced` is specified
           const enhancedConstraints = {
             ...constraints,
             video: {
@@ -451,20 +465,25 @@
               facingMode: videoConstraints.facingMode || { ideal: "environment" },
               width: { ideal: 1280 },
               height: { ideal: 720 },
-              frameRate: { ideal: 60, min: 30 },
-              advanced: [
-                ...(videoConstraints.advanced || []),
-                { focusMode: "continuous" }
-              ]
+              // Use ideal only; DO NOT specify min: 30 for Safari
+              frameRate: { ideal: 60 }
             }
           };
+
+          // Only inject advanced focus constraints if NOT iOS Safari
+          if (!isIOS) {
+            enhancedConstraints.video.advanced = [
+              ...(videoConstraints.advanced || []),
+              { focusMode: "continuous" }
+            ];
+          }
 
           try {
             const stream = await origGetUserMedia(enhancedConstraints);
             initCameraTrack(stream);
             return stream;
           } catch (err) {
-            console.warn("Optimized camera constraints rejected; falling back:", err);
+            console.warn("Enhanced constraints rejected, falling back to base:", err);
             const fallbackStream = await origGetUserMedia(constraints);
             initCameraTrack(fallbackStream);
             return fallbackStream;
@@ -480,11 +499,14 @@
       cameraTrack = track;
 
       try {
-        const capabilities = track.getCapabilities ? track.getCapabilities() : {};
-        if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-          track.applyConstraints({
-            advanced: [{ focusMode: 'continuous' }]
-          }).catch(() => {});
+        // Safe check for track capabilities (Safari often has undefined getCapabilities)
+        if (typeof track.getCapabilities === 'function') {
+          const capabilities = track.getCapabilities();
+          if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+            track.applyConstraints({
+              advanced: [{ focusMode: 'continuous' }]
+            }).catch(() => {});
+          }
         }
       } catch (e) {}
     }
@@ -492,36 +514,37 @@
 </head>
 <body>
 
-  <!-- Loading Splash Screen (Deferred until landscape) -->
+  <!-- Loading Splash Screen (Deferred until confirmed landscape) -->
   <div class="splash-screen" id="splashScreen">
     <div class="spinner"></div>
     <h2 class="splash-title">Initializing WebAR</h2>
-    <p class="splash-desc">Setting up landscape camera & neural tracker...</p>
+    <p class="splash-desc" id="splashDesc">Configuring widescreen tracking engine...</p>
 
     <div class="error-modal" id="missingTargetModal">
-      <h3>Target File Notice</h3>
+      <h3>Notice</h3>
       <p id="targetErrorMessage">Unable to load targets or access camera.</p>
       <a href="compiler.html" class="modal-btn">Open Compiler</a>
     </div>
   </div>
 
-  <!-- Orientation Gate (First screen shown if holding vertically) -->
+  <!-- Orientation Gate (First screen shown if device is in portrait) -->
   <div class="orientation-overlay" id="orientationOverlay">
     <div class="orientation-card">
       <div class="phone-anim-box">
         <div class="phone-mockup"></div>
       </div>
       <h3 class="orientation-title">Hold Phone Horizontally</h3>
-      <p class="orientation-text">
-        This poster experience requires <strong>landscape mode</strong>. Tap below to lock orientation and launch AR.
+      <p class="orientation-text" id="orientationInstruction">
+        This poster experience requires <strong>landscape mode</strong>. Please turn your device sideways to begin.
       </p>
       <button class="orientation-btn" id="startLandscapeBtn">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
           <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
         </svg>
-        Lock Landscape & Launch AR
+        <span id="startBtnLabel">Lock Landscape & Launch</span>
       </button>
+      <p class="ios-note" id="iosNote" style="display:none;">(On iPhone Safari: Turn your phone sideways physically to begin)</p>
     </div>
   </div>
 
@@ -537,14 +560,14 @@
       </div>
 
       <div class="top-actions">
-        <button id="lockOrientationBtn" class="lock-btn" title="Lock screen orientation to landscape">
+        <button id="lockOrientationBtn" class="lock-btn" title="Lock orientation to landscape">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
           </svg>
-          <span id="lockBtnLabel">Lock Landscape</span>
+          <span id="lockBtnLabel">Landscape</span>
         </button>
-        <button class="info-btn" onclick="alert('Point camera at the poster figures. Tap screen anywhere to autofocus.')">?</button>
+        <button class="info-btn" onclick="alert('Point camera at the poster figures. Tap screen to focus.')">?</button>
       </div>
     </div>
 
@@ -555,7 +578,7 @@
       <div class="corner corner-bl"></div>
       <div class="corner corner-br"></div>
       <div class="scan-line"></div>
-      <div class="guide-text">Align poster figure inside frame</div>
+      <div class="guide-text">Align figure inside frame</div>
     </div>
 
     <!-- Bottom Controls & FPS Meter -->
@@ -565,7 +588,7 @@
     </div>
   </div>
 
-  <!-- autoStart: false stops MindAR from booting until landscape is established -->
+  <!-- autoStart: false prevents early portrait-mode initialization -->
   <a-scene
     id="arScene"
     mindar-image="imageTargetSrc: ./assets/targets.mind; autoStart: false; maxTrack: 2; filterMinCF: 0.001; filterBeta: 1000; warmupTolerance: 2; missTolerance: 10; uiLoading: no; uiScanning: no; uiError: no;"
@@ -640,17 +663,41 @@
 
     const orientationOverlay = document.querySelector('#orientationOverlay');
     const startLandscapeBtn = document.querySelector('#startLandscapeBtn');
+    const startBtnLabel = document.querySelector('#startBtnLabel');
     const lockOrientationBtn = document.querySelector('#lockOrientationBtn');
     const lockBtnLabel = document.querySelector('#lockBtnLabel');
+    const iosNote = document.querySelector('#iosNote');
+    const orientationInstruction = document.querySelector('#orientationInstruction');
 
     let activeTargetsCount = 0;
     let isArInitialized = false;
     let isOrientationLocked = false;
+    let orientationTimeout = null;
 
-    // --- 2. SCREEN ORIENTATION LOCK CONTROLLER ---
+    // Adapt UI for Safari iOS
+    if (isIOS) {
+      iosNote.style.display = 'block';
+      startBtnLabel.innerText = "Rotate Device Horizontally";
+      orientationInstruction.innerHTML = "Safari requires physical rotation. Please <strong>turn your iPhone sideways</strong>.";
+      lockOrientationBtn.style.display = 'none'; // Lock API is not supported on Safari
+    }
+
+    // Robust multi-browser landscape check
+    function isLandscape() {
+      if (typeof window.orientation !== 'undefined') {
+        return Math.abs(window.orientation) === 90;
+      }
+      if (screen.orientation && screen.orientation.type) {
+        return screen.orientation.type.includes('landscape');
+      }
+      return window.innerWidth > window.innerHeight;
+    }
+
+    // --- 2. SCREEN ORIENTATION LOCK (FOR ANDROID / SUPPORTED BROWSERS) ---
     async function lockScreenOrientation(preferred = 'landscape') {
+      if (isIOS) return false; // Safari does not support orientation lock
+
       try {
-        // Mobile Chrome/Android requires fullscreen prior to locking
         if (!document.fullscreenElement && !document.webkitFullscreenElement) {
           const rootEl = document.documentElement;
           if (rootEl.requestFullscreen) {
@@ -670,7 +717,7 @@
           return res;
         }
       } catch (err) {
-        console.warn("Screen orientation lock could not be engaged:", err);
+        console.warn("Orientation lock not permitted:", err);
       }
       return false;
     }
@@ -679,31 +726,24 @@
       isOrientationLocked = locked;
       if (locked) {
         lockOrientationBtn.classList.add('locked');
-        lockBtnLabel.innerText = "Landscape Locked";
+        lockBtnLabel.innerText = "Locked";
       } else {
         lockOrientationBtn.classList.remove('locked');
-        lockBtnLabel.innerText = "Lock Landscape";
+        lockBtnLabel.innerText = "Landscape";
       }
     }
 
-    function isPortrait() {
-      if (window.matchMedia && window.matchMedia("(orientation: portrait)").matches) {
-        return true;
-      }
-      return window.innerHeight > window.innerWidth;
-    }
-
-    // --- 3. DEFERRED AR START: INITIALIZE ONLY AFTER IN LANDSCAPE ---
+    // --- 3. DEFERRED START LOGIC ---
     function startWebAR() {
       if (isArInitialized) return;
       isArInitialized = true;
 
-      // Hide orientation gate & show Initializing Splash
+      // Close gate, display splash
       orientationOverlay.classList.remove('active');
       splashScreen.style.display = 'flex';
       splashScreen.classList.remove('fade-out');
 
-      // Prime video objects for iOS/Safari audio-video unlock
+      // Safari requires video play authorization inside a user gesture or load call
       if (video1.paused) video1.load();
       if (video2.paused) video2.load();
 
@@ -723,51 +763,62 @@
       }
     }
 
-    // Handle button action
-    async function onStartRequested() {
-      await lockScreenOrientation('landscape');
+    // Button Click: Android will lock immediately; iOS reminds the user
+    startLandscapeBtn.addEventListener('click', async () => {
+      // Audio/Video touch unlock for iOS Safari
+      if (video1.paused) video1.load();
+      if (video2.paused) video2.load();
 
-      // Wait a tick for viewport dimensions to invert to landscape
+      if (!isIOS) {
+        await lockScreenOrientation('landscape');
+      }
+
+      // Check if already in landscape, or wait for rotation
       setTimeout(() => {
-        startWebAR();
-      }, 300);
-    }
-
-    startLandscapeBtn.addEventListener('click', onStartRequested);
-    lockOrientationBtn.addEventListener('click', () => lockScreenOrientation('landscape'));
-
-    // Handle physical rotation by the user
-    function checkOrientationGate() {
-      if (!isPortrait()) {
-        // User turned device to landscape physically
-        if (!isArInitialized) {
-          lockScreenOrientation('landscape').catch(() => {});
+        if (isLandscape()) {
           startWebAR();
-        } else {
-          handleResizeSync();
+        } else if (isIOS) {
+          alert("Please turn your phone sideways into landscape orientation.");
         }
-      } else {
-        if (!isArInitialized) {
-          orientationOverlay.classList.add('active');
-        }
-      }
-    }
-
-    window.addEventListener('resize', checkOrientationGate);
-    window.addEventListener('orientationchange', checkOrientationGate);
-
-    // Initial check when page opens
-    window.addEventListener('DOMContentLoaded', () => {
-      if (!isPortrait()) {
-        // Device is already in landscape (or desktop/tablet)
-        startWebAR();
-      } else {
-        // In portrait: show orientation gate and wait
-        orientationOverlay.classList.add('active');
-      }
+      }, 350);
     });
 
-    // --- 4. RE-SYNCHRONIZATION RESIZE HANDLER ---
+    lockOrientationBtn.addEventListener('click', () => lockScreenOrientation('landscape'));
+
+    // Handle Orientation and Viewport Changes (With Safari debounce)
+    function onViewportChange() {
+      clearTimeout(orientationTimeout);
+      // Wait 350ms for Safari's address bar collapse and orientation animation to finish
+      orientationTimeout = setTimeout(() => {
+        if (isLandscape()) {
+          if (!isArInitialized) {
+            startWebAR();
+          } else {
+            orientationOverlay.classList.remove('active');
+            handleResizeSync();
+          }
+        } else {
+          // If turned back to portrait after starting
+          orientationOverlay.classList.add('active');
+        }
+      }, 350);
+    }
+
+    window.addEventListener('resize', onViewportChange);
+    window.addEventListener('orientationchange', onViewportChange);
+
+    // Initial check on load
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        if (isLandscape()) {
+          startWebAR();
+        } else {
+          orientationOverlay.classList.add('active');
+        }
+      }, 200);
+    });
+
+    // --- 4. CAMERA & PROJECTION SYNC ---
     function handleResizeSync() {
       const width = window.innerWidth;
       const height = window.innerHeight;
@@ -791,7 +842,7 @@
       }
     }
 
-    // --- 5. MINDAR STATUS EVENTS ---
+    // --- 5. MINDAR EVENTS ---
     scene.addEventListener('arReady', () => {
       splashScreen.classList.add('fade-out');
       setTimeout(() => {
@@ -821,12 +872,8 @@
     }
     requestAnimationFrame(trackFPS);
 
-    // --- 7. TAP-TO-FOCUS CONTROLLER ---
+    // --- 7. SAFARI-SAFE TAP-TO-FOCUS CONTROLLER ---
     async function triggerAutofocus(e) {
-      if (!isOrientationLocked && screen.orientation && screen.orientation.lock) {
-        lockScreenOrientation('landscape').catch(() => {});
-      }
-
       const x = e.clientX || (e.touches && e.touches[0].clientX);
       const y = e.clientY || (e.touches && e.touches[0].clientY);
 
@@ -839,21 +886,19 @@
 
       triggerHaptic(20);
 
-      if (!cameraTrack) return;
+      // Camera focusMode constraint - Android only
+      if (!cameraTrack || isIOS) return;
       try {
-        const capabilities = cameraTrack.getCapabilities ? cameraTrack.getCapabilities() : {};
-        const constraints = { advanced: [] };
+        if (typeof cameraTrack.getCapabilities === 'function') {
+          const capabilities = cameraTrack.getCapabilities();
+          const constraints = { advanced: [] };
 
-        if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-          constraints.advanced.push({ focusMode: 'continuous' });
-        }
-        if (capabilities.pointsOfInterest && x && y) {
-          constraints.advanced.push({
-            pointsOfInterest: [{ x: x / window.innerWidth, y: y / window.innerHeight }]
-          });
-        }
-        if (constraints.advanced.length > 0) {
-          await cameraTrack.applyConstraints(constraints);
+          if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+            constraints.advanced.push({ focusMode: 'continuous' });
+          }
+          if (constraints.advanced.length > 0) {
+            await cameraTrack.applyConstraints(constraints);
+          }
         }
       } catch (err) {}
     }
